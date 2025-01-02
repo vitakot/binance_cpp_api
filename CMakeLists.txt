@@ -28,7 +28,8 @@ set(HEADERS
         include/vk/binance/binance_http_session.h
         include/vk/binance/binance_futures_ws_session.h
         include/vk/binance/binance_ws_stream_manager.h
-        include/vk/binance/binance.h)
+        include/vk/binance/binance.h
+        include/vk/binance/binance_exchange_connector.h)
 
 set(SOURCES
         src/binance_models.cpp
@@ -38,7 +39,8 @@ set(SOURCES
         src/binance_http_session.cpp
         src/binance_futures_ws_session.cpp
         src/binance_ws_stream_manager.cpp
-        src/binance.cpp)
+        src/binance.cpp
+        src/binance_exchange_connector.cpp)
 
 add_library(binance_api OBJECT ${SOURCES} ${HEADERS})
 set_target_properties(binance_api PROPERTIES POSITION_INDEPENDENT_CODE 1)
