@@ -1,1 +1,3 @@
-# binance_cpp_api
+# Binance Futures API
+
+Supports perpetual futures only.
