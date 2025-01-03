@@ -53,7 +53,8 @@ public:
     }
 };
 
-BOOST_SYMBOL_EXPORT inline IModuleFactory *getModuleFactory() {
+// Must not be inline!
+BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
     if (!g_moduleFactory) {
         FactoryInfo factoryInfo;
         factoryInfo.m_description = std::string(magic_enum::enum_name(ExchangeId::BinanceFutures));
