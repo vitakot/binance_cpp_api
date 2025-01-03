@@ -11,6 +11,10 @@ if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif ()
 
+add_definitions(-fPIC)
+
+SET(MODULE_MANAGER ON)
+
 find_package(Boost 1.83 REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -42,9 +46,9 @@ set(SOURCES
         src/binance.cpp
         src/binance_exchange_connector.cpp)
 
-add_library(binance_api OBJECT ${SOURCES} ${HEADERS})
+add_library(binance_api SHARED ${SOURCES} ${HEADERS})
 set_target_properties(binance_api PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_tools nlohmann_json::nlohmann_json atomic)
 
 add_executable(test test/main.cpp)
-target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api)
+target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
