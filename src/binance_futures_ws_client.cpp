@@ -7,7 +7,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 */
 
 #include "vk/binance/binance_futures_ws_client.h"
-#include "vk/tools/json_utils.h"
+#include "vk/utils/json_utils.h"
 #include <boost/beast/core.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <fmt/format.h>

@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #ifndef INCLUDE_CK_BINANCE_MODELS_H
 #define INCLUDE_CK_BINANCE_MODELS_H
 
-#include "vk/tools/i_json.h"
+#include "vk/interface/i_json.h"
 #include <nlohmann/json.hpp>
 
 namespace vk::binance {

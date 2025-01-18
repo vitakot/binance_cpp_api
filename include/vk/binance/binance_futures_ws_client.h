@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #ifndef BINANCE_FUTURES_WS_CLIENT_H
 #define BINANCE_FUTURES_WS_CLIENT_H
 
-#include <vk/tools/log_utils.h>
+#include <vk/utils/log_utils.h>
 #include "binance_models.h"
 #include "binance_event_models.h"
 #include "binance_futures_ws_session.h"
