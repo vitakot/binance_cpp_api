@@ -7,7 +7,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 */
 
 #include "vk/binance/binance_http_session.h"
-#include "vk/tools/utils.h"
+#include "vk/utils/utils.h"
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/version.hpp>
 #include <spdlog/spdlog.h>

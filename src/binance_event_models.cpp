@@ -7,8 +7,8 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 */
 
 #include "vk/binance/binance_event_models.h"
-#include "vk/tools/utils.h"
-#include "vk/tools//json_utils.h"
+#include "vk/utils/utils.h"
+#include "vk/utils/json_utils.h"
 
 namespace vk::binance::futures {
 nlohmann::json Event::toJson() const {
