@@ -412,8 +412,8 @@ nlohmann::json RateLimit::toJson() const {
 
 void RateLimit::fromJson(const nlohmann::json &json) {
     readMagicEnum<RateLimitInterval>(json, "interval", m_interval);
-    readValue<int64_t>(json, "intervalNum", m_intervalNum);
-    readValue<int64_t>(json, "limit", m_limit);
+    readValue<int32_t>(json, "intervalNum", m_intervalNum);
+    readValue<int32_t>(json, "limit", m_limit);
     readMagicEnum<RateLimitType>(json, "rateLimitType", m_rateLimitType);
 }
 

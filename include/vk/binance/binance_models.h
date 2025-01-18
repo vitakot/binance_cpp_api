@@ -515,8 +515,8 @@ struct Symbol final : IJson {
 
 struct RateLimit final : IJson {
     RateLimitInterval m_interval{RateLimitInterval::MINUTE};
-    std::int64_t m_intervalNum{};
-    std::int64_t m_limit{};
+    std::int32_t m_intervalNum{};
+    std::int32_t m_limit{};
     RateLimitType m_rateLimitType{RateLimitType::REQUEST_WEIGHT};
 
     [[nodiscard]] nlohmann::json toJson() const override;
