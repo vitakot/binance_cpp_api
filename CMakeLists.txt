@@ -25,6 +25,10 @@ if (NOT TARGET vk_common)
     add_subdirectory(vk_cpp_common)
 endif()
 
+if (NOT MODULE_MANAGER)
+    add_definitions(-DNO_MODULE_MANAGER)
+endif()
+
 set(HEADERS
         include/vk/binance/binance_futures_rest_client.h
         include/vk/binance/binance_futures_ws_client.h
@@ -53,8 +57,10 @@ else ()
     add_library(binance_api STATIC ${SOURCES} ${HEADERS})
 endif ()
 
-set_target_properties(binance_api PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(binance_api PRIVATE vk_common OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
+target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
 
 add_executable(binance_test test/main.cpp)
 target_link_libraries(binance_test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
+
+add_executable(connector_test test/connector.cpp)
+target_link_libraries(connector_test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
