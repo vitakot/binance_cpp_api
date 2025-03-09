@@ -57,7 +57,7 @@ else ()
     add_library(binance_api STATIC ${SOURCES} ${HEADERS})
 endif ()
 
-target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
+target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
 
 add_executable(binance_test test/main.cpp)
 target_link_libraries(binance_test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)

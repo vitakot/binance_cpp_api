@@ -13,7 +13,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include "vk/interface/i_exchange_connector.h"
 #include "vk/common/module_factory.h"
 #include <memory>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 namespace vk {
 class BinanceFuturesExchangeConnector final : public IExchangeConnector {
