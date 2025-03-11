@@ -145,7 +145,7 @@ std::vector<Ticker> BinanceFuturesExchangeConnector::getTickerInfo(const std::st
 
     for (const auto& el : exchangeInfo.m_symbols) {
         if (el.m_contractType == symbolType && el.m_quoteAsset == "USDT" && el.m_status ==
-            binance::futures::ContractStatus::TRADING) {
+            binance::ContractStatus::TRADING) {
             symbolsToSearch.push_back(el);
         }
     }
