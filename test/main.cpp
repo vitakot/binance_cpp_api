@@ -1,7 +1,7 @@
 #include "vk/binance/binance_futures_rest_client.h"
 #include "vk/binance/binance.h"
-#include "vk/tools/json_utils.h"
-#include "vk/tools/utils.h"
+#include "vk/utils/json_utils.h"
+#include "vk/utils/utils.h"
 #include "vk/binance/binance_futures_ws_client.h"
 #include "vk/binance/binance_ws_stream_manager.h"
 #include <memory>

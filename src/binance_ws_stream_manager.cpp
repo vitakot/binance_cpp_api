@@ -12,7 +12,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include <mutex>
 #include <fmt/format.h>
 #include <thread>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 using namespace std::chrono_literals;
 

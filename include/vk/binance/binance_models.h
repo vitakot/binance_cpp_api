@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #ifndef INCLUDE_CK_BINANCE_MODELS_H
 #define INCLUDE_CK_BINANCE_MODELS_H
 
-#include "vk/tools/i_json.h"
+#include "vk/interface/i_json.h"
 #include <nlohmann/json.hpp>
 
 namespace vk::binance {
@@ -69,6 +69,106 @@ enum class WorkingType : std::int32_t {
     MARK_PRICE,
     CONTRACT_PRICE
 };
+
+enum class RateLimitType : std::int32_t {
+    RAW_REQUEST,
+    ORDERS,
+    REQUEST_WEIGHT
+};
+
+enum class RateLimitInterval : std::int32_t {
+    MONTH,
+    WEEK,
+    DAY,
+    HOUR,
+    MINUTE,
+    SECOND
+};
+
+enum class ContractStatus : std::int32_t {
+    PENDING_TRADING,
+    TRADING,
+    PRE_DELIVERING,
+    DELIVERING,
+    DELIVERED,
+    PRE_SETTLE,
+    SETTLING,
+    CLOSE
+};
+
+struct RateLimit final : IJson {
+    RateLimitInterval m_interval{RateLimitInterval::MINUTE};
+    std::int32_t m_intervalNum{};
+    std::int32_t m_limit{};
+    RateLimitType m_rateLimitType{RateLimitType::REQUEST_WEIGHT};
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
+
+struct ErrorResponse final : IJson {
+    int m_code{};
+
+    std::string m_msg{};
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
+
+struct Candle final : IJson {
+    std::int64_t m_openTime{};
+    double m_open{};
+    double m_high{};
+    double m_low{};
+    double m_close{};
+    double m_volume{};
+    std::int64_t m_closeTime{};
+    double m_quoteVolume{};
+    std::int64_t m_numberOfTrades{};
+    double m_takerBuyVolume{};
+    double m_takerQuoteVolume{};
+    std::string m_ignore{};
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
+
+struct CandlesResponse final : IJson {
+    std::vector<Candle> m_candles;
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
+}
+
+namespace vk::binance::spot {
+
+struct Symbol final : IJson {
+    std::string m_symbol{};
+    ContractStatus m_status{ContractStatus::TRADING};
+    std::string m_baseAsset{};
+    std::string m_quoteAsset{};
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
+
+struct Exchange final : IJson {
+    std::vector<RateLimit> m_rateLimits{};
+    std::vector<Symbol> m_symbols{};
+
+    /// lastUpdateTime is not part of Binance API, it serves for keeping Exchange data up to date
+    std::int64_t m_lastUpdateTime{-1};
+
+    [[nodiscard]] nlohmann::json toJson() const override;
+
+    void fromJson(const nlohmann::json &json) override;
+};
 }
 
 namespace vk::binance::futures {
@@ -114,21 +214,6 @@ enum class WorkingType : std::int32_t {
     MARK_PRICE
 };
 
-enum class RateLimitType : std::int32_t {
-    RAW_REQUEST,
-    ORDERS,
-    REQUEST_WEIGHT
-};
-
-enum class RateLimitInterval : std::int32_t {
-    MONTH,
-    WEEK,
-    DAY,
-    HOUR,
-    MINUTE,
-    SECOND
-};
-
 enum class SymbolFilter : std::int32_t {
     PRICE_FILTER,
     LOT_SIZE,
@@ -145,17 +230,6 @@ enum class ContractType : std::int32_t {
     NEXT_MONTH,
     CURRENT_QUARTER,
     NEXT_QUARTER
-};
-
-enum class ContractStatus : std::int32_t {
-    PENDING_TRADING,
-    TRADING,
-    PRE_DELIVERING,
-    DELIVERING,
-    DELIVERED,
-    PRE_SETTLE,
-    SETTLING,
-    CLOSE
 };
 
 enum class IncomeType : std::int32_t {
@@ -195,16 +269,6 @@ enum class SelfTradePreventionMode : std::int32_t {
     EXPIRE_TAKER,
     EXPIRE_BOTH,
     EXPIRE_MAKER
-};
-
-struct ErrorResponse final : IJson {
-    int m_code{};
-
-    std::string m_msg{};
-
-    [[nodiscard]] nlohmann::json toJson() const override;
-
-    void fromJson(const nlohmann::json &json) override;
 };
 
 struct FundingRate final : IJson {
@@ -416,33 +480,6 @@ struct OrdersResponse final : IJson {
     void fromJson(const nlohmann::json &json) override;
 };
 
-struct Candle final : IJson {
-    std::int64_t m_openTime{};
-    double m_open{};
-    double m_high{};
-    double m_low{};
-    double m_close{};
-    double m_volume{};
-    std::int64_t m_closeTime{};
-    double m_quoteVolume{};
-    std::int64_t m_numberOfTrades{};
-    double m_takerBuyVolume{};
-    double m_takerQuoteVolume{};
-    std::string m_ignore{};
-
-    [[nodiscard]] nlohmann::json toJson() const override;
-
-    void fromJson(const nlohmann::json &json) override;
-};
-
-struct CandlesResponse final : IJson {
-    std::vector<Candle> m_candles;
-
-    [[nodiscard]] nlohmann::json toJson() const override;
-
-    void fromJson(const nlohmann::json &json) override;
-};
-
 struct Position final : IJson {
     double m_entryPrice{};
     std::string m_marginType{};
@@ -507,17 +544,6 @@ struct Symbol final : IJson {
     std::vector<TimeInForce> m_timeInForce{};
     double m_liquidationFee{};
     double m_marketTakeBound{};
-
-    [[nodiscard]] nlohmann::json toJson() const override;
-
-    void fromJson(const nlohmann::json &json) override;
-};
-
-struct RateLimit final : IJson {
-    RateLimitInterval m_interval{RateLimitInterval::MINUTE};
-    std::int64_t m_intervalNum{};
-    std::int64_t m_limit{};
-    RateLimitType m_rateLimitType{RateLimitType::REQUEST_WEIGHT};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 

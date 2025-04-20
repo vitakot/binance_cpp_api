@@ -7,10 +7,56 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 */
 
 #include "vk/binance/binance_models.h"
-#include "vk/tools//utils.h"
-#include "vk/tools/json_utils.h"
+#include "vk/utils/utils.h"
+#include "vk/utils/json_utils.h"
 
-namespace vk::binance::futures {
+namespace vk::binance {
+nlohmann::json Candle::toJson() const {
+    nlohmann::json json;
+    json.push_back(m_openTime);
+    json.push_back(std::to_string(m_open));
+    json.push_back(std::to_string(m_high));
+    json.push_back(std::to_string(m_low));
+    json.push_back(std::to_string(m_close));
+    json.push_back(std::to_string(m_volume));
+    json.push_back(m_closeTime);
+    json.push_back(std::to_string(m_quoteVolume));
+    json.push_back(m_numberOfTrades);
+    json.push_back(std::to_string(m_takerBuyVolume));
+    json.push_back(std::to_string(m_takerQuoteVolume));
+    json.push_back(m_ignore);
+    return json;
+}
+
+void Candle::fromJson(const nlohmann::json &json) {
+    m_openTime = json[0];
+    m_open = stod(json[1].get<std::string>());
+    m_high = stod(json[2].get<std::string>());
+    m_low = stod(json[3].get<std::string>());
+    m_close = stod(json[4].get<std::string>());
+    m_volume = stod(json[5].get<std::string>());
+    m_closeTime = json[6];
+    m_quoteVolume = stod(json[7].get<std::string>());
+    m_numberOfTrades = json[8];
+    m_takerBuyVolume = stod(json[9].get<std::string>());
+    m_takerQuoteVolume = stod(json[10].get<std::string>());
+    m_ignore = json[11];
+}
+
+nlohmann::json CandlesResponse::toJson() const {
+    throw std::runtime_error("Unimplemented: CandlesResponse::toJson()");
+}
+
+void CandlesResponse::fromJson(const nlohmann::json &json) {
+    m_candles.clear();
+
+    for (const auto &el: json) {
+        Candle candle;
+        candle.fromJson(el);
+        m_candles.push_back(candle);
+    }
+}
+
 nlohmann::json ErrorResponse::toJson() const {
     throw std::runtime_error("Unimplemented: ErrorResponse::toJson()");
 }
@@ -19,6 +65,54 @@ void ErrorResponse::fromJson(const nlohmann::json &json) {
     readValue<int>(json, "code", m_code);
     readValue<std::string>(json, "msg", m_msg);
 }
+
+nlohmann::json RateLimit::toJson() const {
+    throw std::runtime_error("Unimplemented: RateLimit::toJson()");
+}
+
+void RateLimit::fromJson(const nlohmann::json &json) {
+    readMagicEnum<RateLimitInterval>(json, "interval", m_interval);
+    readValue<int32_t>(json, "intervalNum", m_intervalNum);
+    readValue<int32_t>(json, "limit", m_limit);
+    readMagicEnum<RateLimitType>(json, "rateLimitType", m_rateLimitType);
+}
+}
+
+namespace vk::binance::spot {
+nlohmann::json Symbol::toJson() const {
+    throw std::runtime_error("Unimplemented: Symbol::toJson()");
+}
+
+void Symbol::fromJson(const nlohmann::json &json) {
+    readValue<std::string>(json, "symbol", m_symbol);
+    readMagicEnum<ContractStatus>(json, "status", m_status);
+    readValue<std::string>(json, "baseAsset", m_baseAsset);
+    readValue<std::string>(json, "quoteAsset", m_quoteAsset);
+}
+
+nlohmann::json Exchange::toJson() const {
+    throw std::runtime_error("Unimplemented: Exchange::toJson()");
+}
+
+void Exchange::fromJson(const nlohmann::json &json) {
+    m_rateLimits.clear();
+    m_symbols.clear();
+
+    for (const auto &el: json["rateLimits"]) {
+        RateLimit rateLimit;
+        rateLimit.fromJson(el);
+        m_rateLimits.push_back(rateLimit);
+    }
+
+    for (const auto &el: json["symbols"]) {
+        Symbol symbol;
+        symbol.fromJson(el);
+        m_symbols.push_back(symbol);
+    }
+}
+}
+
+namespace vk::binance::futures {
 
 nlohmann::json FundingRate::toJson() const {
     throw std::runtime_error("Unimplemented: FundingRate::toJson()");
@@ -279,52 +373,6 @@ void OrdersResponse::fromJson(const nlohmann::json &json) {
     }
 }
 
-nlohmann::json Candle::toJson() const {
-    nlohmann::json json;
-    json.push_back(m_openTime);
-    json.push_back(std::to_string(m_open));
-    json.push_back(std::to_string(m_high));
-    json.push_back(std::to_string(m_low));
-    json.push_back(std::to_string(m_close));
-    json.push_back(std::to_string(m_volume));
-    json.push_back(m_closeTime);
-    json.push_back(std::to_string(m_quoteVolume));
-    json.push_back(m_numberOfTrades);
-    json.push_back(std::to_string(m_takerBuyVolume));
-    json.push_back(std::to_string(m_takerQuoteVolume));
-    json.push_back(m_ignore);
-    return json;
-}
-
-void Candle::fromJson(const nlohmann::json &json) {
-    m_openTime = json[0];
-    m_open = stod(json[1].get<std::string>());
-    m_high = stod(json[2].get<std::string>());
-    m_low = stod(json[3].get<std::string>());
-    m_close = stod(json[4].get<std::string>());
-    m_volume = stod(json[5].get<std::string>());
-    m_closeTime = json[6];
-    m_quoteVolume = stod(json[7].get<std::string>());
-    m_numberOfTrades = json[8];
-    m_takerBuyVolume = stod(json[9].get<std::string>());
-    m_takerQuoteVolume = stod(json[10].get<std::string>());
-    m_ignore = json[11];
-}
-
-nlohmann::json CandlesResponse::toJson() const {
-    throw std::runtime_error("Unimplemented: CandlesResponse::toJson()");
-}
-
-void CandlesResponse::fromJson(const nlohmann::json &json) {
-    m_candles.clear();
-
-    for (const auto &el: json) {
-        Candle candle;
-        candle.fromJson(el);
-        m_candles.push_back(candle);
-    }
-}
-
 nlohmann::json Position::toJson() const {
     throw std::runtime_error("Unimplemented: Position::toJson()");
 }
@@ -404,17 +452,6 @@ void Symbol::fromJson(const nlohmann::json &json) {
 
     readValue<int64_t>(json, "settlePlan", m_settlePlan);
     m_triggerProtect = readStringAsDouble(json, "triggerProtect");
-}
-
-nlohmann::json RateLimit::toJson() const {
-    throw std::runtime_error("Unimplemented: RateLimit::toJson()");
-}
-
-void RateLimit::fromJson(const nlohmann::json &json) {
-    readMagicEnum<RateLimitInterval>(json, "interval", m_interval);
-    readValue<int64_t>(json, "intervalNum", m_intervalNum);
-    readValue<int64_t>(json, "limit", m_limit);
-    readMagicEnum<RateLimitType>(json, "rateLimitType", m_rateLimitType);
 }
 
 nlohmann::json Exchange::toJson() const {
