@@ -4,7 +4,7 @@ project(binance_api)
 set(CMAKE_CXX_STANDARD 20)
 
 if (MSVC)
-    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj -DVERBOSE_LOG)
+    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj)
 endif ()
 
 if (POLICY CMP0167)
@@ -14,6 +14,7 @@ endif ()
 add_definitions(-fPIC)
 
 SET(MODULE_MANAGER ON)
+add_definitions(-DVERBOSE_LOG)
 
 find_package(Boost 1.83 REQUIRED)
 find_package(OpenSSL REQUIRED)
