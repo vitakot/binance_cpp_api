@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #ifndef INCLUDE_VK_BINANCE_FUTURES_WS_STREAM_MANAGER_H
 #define INCLUDE_VK_BINANCE_FUTURES_WS_STREAM_MANAGER_H
 
-#include <vk/tools/log_utils.h>
+#include <vk/utils/log_utils.h>
 #include "binance_event_models.h"
 #include "binance_models.h"
 #include <optional>

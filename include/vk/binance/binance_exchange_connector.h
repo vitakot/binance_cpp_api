@@ -10,10 +10,10 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #ifndef INCLUDE_VK_BINANCE_EXCHANGE_CONNECTOR_H
 #define INCLUDE_VK_BINANCE_EXCHANGE_CONNECTOR_H
 
-#include "vk/tools/i_exchange_connector.h"
-#include "vk/tools/module_factory.h"
+#include "vk/interface/i_exchange_connector.h"
+#include "vk/common/module_factory.h"
 #include <memory>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 namespace vk {
 class BinanceFuturesExchangeConnector final : public IExchangeConnector {
@@ -33,13 +33,11 @@ public:
 
     void login(const std::tuple<std::string, std::string, std::string> &credentials) override;
 
-    void setDemo(bool demo) override;
-
-    [[nodiscard]] bool isDemo() const override;
-
     Trade placeOrder(const Order &order) override;
 
-    [[nodiscard]] TickerPrice getSymbolTickerPrice(const std::string &symbol) const override;
+    [[nodiscard]] TickerPrice getTickerPrice(const std::string &symbol) const override;
+
+    [[nodiscard]] std::vector<Ticker> getTickerInfo(const std::string& symbol) const override;
 
     [[nodiscard]] Balance getAccountBalance(const std::string &currency) const override;
 
@@ -53,6 +51,7 @@ public:
     }
 };
 
+#ifndef NO_MODULE_MANAGER
 // Must not be inline!
 BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
     if (!g_moduleFactory) {
@@ -70,5 +69,6 @@ BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
 
     return g_moduleFactory;
 }
+#endif
 }
 #endif //INCLUDE_VK_BINANCE_EXCHANGE_CONNECTOR_H
