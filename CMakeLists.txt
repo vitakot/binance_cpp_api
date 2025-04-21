@@ -22,8 +22,11 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(magic_enum REQUIRED)
 
-include_directories(include vk_cpp_tools/include SYSTEM ${Boost_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
-add_subdirectory(vk_cpp_tools)
+include_directories(include vk_cpp_common/include SYSTEM ${Boost_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
+
+if (NOT TARGET vk_common)
+    add_subdirectory(vk_cpp_common)
+endif()
 
 set(HEADERS
         include/vk/binance/binance_futures_rest_client.h
@@ -49,7 +52,7 @@ set(SOURCES
 
 add_library(binance_api SHARED ${SOURCES} ${HEADERS})
 set_target_properties(binance_api PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_tools nlohmann_json::nlohmann_json atomic)
+target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
 
 add_executable(test test/main.cpp)
 target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
