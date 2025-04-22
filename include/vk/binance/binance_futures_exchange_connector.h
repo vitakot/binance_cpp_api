@@ -41,10 +41,11 @@ public:
 
     [[nodiscard]] Balance getAccountBalance(const std::string &currency) const override;
 
-    [[nodiscard]] FundingRate getLastFundingRate(const std::string &symbol) const override;
+    [[nodiscard]] FundingRate getFundingRate(const std::string &symbol) const override;
 
-    [[nodiscard]] std::vector<FundingRate> getFundingRates(const std::string &symbol, std::int64_t startTime,
-                                                           std::int64_t endTime) const override;
+    [[nodiscard]] std::vector<FundingRate> getFundingRates() const override;
+
+    [[nodiscard]] std::int64_t getServerTime() const override;
 
     static std::shared_ptr<IExchangeConnector> createInstance() {
         return std::make_shared<BinanceFuturesExchangeConnector>();

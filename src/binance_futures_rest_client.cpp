@@ -53,7 +53,7 @@ public:
     int findPrecisionForSymbol(const PrecisionType &type, const std::string &symbol) const {
         if (getExchange().m_lastUpdateTime < 0 || std::time(nullptr) - getExchange().m_lastUpdateTime >
             EXCHANGE_DATA_MAX_AGE_S) {
-            m_parent->getExchangeInfo(true);
+            auto exchange = m_parent->getExchangeInfo(true);
         }
 
         for (const auto &symbolEl: getExchange().m_symbols) {
