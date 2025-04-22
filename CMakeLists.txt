@@ -4,17 +4,14 @@ project(binance_api)
 set(CMAKE_CXX_STANDARD 20)
 
 if (MSVC)
-    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj)
+    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj -DVERBOSE_LOG)
+else ()
+    add_definitions(-fPIC)
 endif ()
 
 if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif ()
-
-add_definitions(-fPIC)
-
-SET(MODULE_MANAGER ON)
-add_definitions(-DVERBOSE_LOG)
 
 find_package(Boost 1.83 REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -50,9 +47,13 @@ set(SOURCES
         src/binance.cpp
         src/binance_exchange_connector.cpp)
 
-add_library(binance_api SHARED ${SOURCES} ${HEADERS})
-set_target_properties(binance_api PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
+if (MODULE_MANAGER)
+    add_library(binance_api SHARED ${SOURCES} ${HEADERS})
+else ()
+    add_library(binance_api STATIC ${SOURCES} ${HEADERS})
 
-add_executable(test test/main.cpp)
-target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
+    add_executable(test test/main.cpp)
+    target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
+endif ()
+
+target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
