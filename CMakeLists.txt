@@ -54,6 +54,7 @@ else ()
 
     add_executable(test test/main.cpp)
     target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
+
 endif ()
 
 target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)

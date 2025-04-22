@@ -12,6 +12,8 @@
 #include <spdlog/spdlog.h>
 #include <future>
 
+#include "vk/interface/exchange_types.h"
+
 using namespace vk::binance;
 using namespace std::chrono_literals;
 
@@ -317,18 +319,21 @@ void testFR() {
     const auto restClient = std::make_shared<futures::RESTClient>(fst, snd);
 
     try {
-        const auto nowTimestamp = std::chrono::seconds(std::time(nullptr)).count() * 1000;
-        constexpr int64_t oldestBNBDate = 1420070400000;
+        // const auto nowTimestamp = std::chrono::seconds(std::time(nullptr)).count() * 1000;
+        // constexpr int64_t oldestBNBDate = 1420070400000;
+        //
+        // const auto data = restClient->getFundingRates("APTUSDT", oldestBNBDate, nowTimestamp, 1000);
+        //
+        // for (auto i = 0; i < data.size() - 1; i++) {
+        //     if (const auto diff = (data[i + 1].m_fundingTime - data[i].m_fundingTime) / 1000;
+        //         diff > 28810 || diff < 28790) {
+        //     }
+        //
+        //     std::cout << data[i].m_fundingTime << std::endl;
+        // }
 
-        const auto data = restClient->getFundingRates("APTUSDT", oldestBNBDate, nowTimestamp, 1000);
+        const auto fr = restClient->getLastFundingRate("APTUSDT");
 
-        for (auto i = 0; i < data.size() - 1; i++) {
-            if (const auto diff = (data[i + 1].m_fundingTime - data[i].m_fundingTime) / 1000;
-                diff > 28810 || diff < 28790) {
-            }
-
-            std::cout << data[i].m_fundingTime << std::endl;
-        }
     } catch (std::exception &e) {
         logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
     }
@@ -378,13 +383,29 @@ void testAccountBalance() {
     }
 }
 
+void testFRMulti() {
+    std::vector<vk::FundingRate> retVal;
+
+    const auto restClient = std::make_shared<futures::RESTClient>("", "");
+
+    for (const auto& rate : restClient->getMarkPrices()) {
+        vk::FundingRate fr;
+        fr.symbol = rate.m_symbol;
+        fr.fundingRate = rate.m_lastFundingRate;
+        fr.fundingTime = rate.m_nextFundingTime;
+        retVal.push_back(fr);
+    }
+
+    spdlog::info("FR number", retVal.size());
+}
+
 int main() {
-    testBinance();
-    testWsManagerCandles();
-    testCandlesLimits();
-    testRisk();
-    measureRestResponses();
-    testFR();
-    testAccountBalance();
+    // testBinance();
+    // testWsManagerCandles();
+    // testCandlesLimits();
+    // testRisk();
+    // measureRestResponses();
+    testFRMulti();
+    //testAccountBalance();
     return getchar();
 }

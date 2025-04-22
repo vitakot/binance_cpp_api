@@ -78,6 +78,7 @@ struct BinanceFuturesExchangeConnector::P {
 BinanceFuturesExchangeConnector::BinanceFuturesExchangeConnector() : m_p(std::make_unique<P>()) {
     m_p->restClient = std::make_shared<binance::futures::RESTClient>("","");
     m_p->streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->restClient);
+    m_p->restClient->updateExchangeInfo(true);
 }
 
 BinanceFuturesExchangeConnector::~BinanceFuturesExchangeConnector() {
@@ -103,6 +104,7 @@ void BinanceFuturesExchangeConnector::login(const std::tuple<std::string, std::s
     m_p->restClient = std::make_shared<binance::futures::RESTClient>(std::get<0>(credentials),
                                                                      std::get<1>(credentials));
     m_p->streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->restClient);
+    m_p->restClient->updateExchangeInfo(true);
 }
 
 Trade BinanceFuturesExchangeConnector::placeOrder(const Order& order) {
@@ -185,8 +187,13 @@ FundingRate BinanceFuturesExchangeConnector::getFundingRate(const std::string& s
 std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates() const {
     std::vector<FundingRate> retVal;
 
-    //m_p->restClient->getLastFundingRate()
-
+    for (const auto& mp : m_p->restClient->getMarkPrices()) {
+        FundingRate fr;
+        fr.symbol = mp.m_symbol;
+        fr.fundingRate = mp.m_lastFundingRate;
+        fr.fundingTime = mp.m_nextFundingTime;
+        retVal.push_back(fr);
+    }
 
     return retVal;
 }

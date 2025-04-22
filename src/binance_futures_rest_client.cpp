@@ -53,7 +53,7 @@ public:
     int findPrecisionForSymbol(const PrecisionType &type, const std::string &symbol) const {
         if (getExchange().m_lastUpdateTime < 0 || std::time(nullptr) - getExchange().m_lastUpdateTime >
             EXCHANGE_DATA_MAX_AGE_S) {
-            auto exchange = m_parent->getExchangeInfo(true);
+            m_parent->updateExchangeInfo(true);
         }
 
         for (const auto &symbolEl: getExchange().m_symbols) {
@@ -145,7 +145,7 @@ RESTClient::P::getFundingRates(const std::string &symbol, const int64_t startTim
 
 FundingRate RESTClient::getLastFundingRate(const std::string &symbol) const {
     if (symbol.empty()) {
-        throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
+       throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
     }
 
     const auto response = checkResponse(m_p->m_httpSession->get("fundingRate?symbol=" + symbol, true));
@@ -477,6 +477,16 @@ std::vector<Position> RESTClient::getPosition(const std::string &symbol) const {
 }
 
 Exchange RESTClient::getExchangeInfo(const bool force) const {
+    updateExchangeInfo(force);
+    return m_p->getExchange();
+}
+
+void RESTClient::updateExchangeInfo(bool force) const {
+
+    if (m_p->getExchange().m_lastUpdateTime < 0 || std::time(nullptr) - m_p->getExchange().m_lastUpdateTime > EXCHANGE_DATA_MAX_AGE_S) {
+        force = true;
+    }
+
     if (m_p->getExchange().m_symbols.empty() || force) {
         const auto response = checkResponse(m_p->m_httpSession->get("exchangeInfo?", true));
 
@@ -485,8 +495,6 @@ Exchange RESTClient::getExchangeInfo(const bool force) const {
         exchange.m_lastUpdateTime = std::time(nullptr);
         m_p->setExchange(exchange);
     }
-
-    return m_p->getExchange();
 }
 
 std::vector<AccountBalance> RESTClient::getAccountBalances() const {

@@ -195,6 +195,13 @@ public:
     [[nodiscard]] Exchange getExchangeInfo(bool force = false) const;
 
     /**
+     * Update Exchange info
+     * @param force Reload Exchange info if true
+     * @throws nlohmann::json::exception, std::exception
+     */
+    void updateExchangeInfo(bool force = false) const;
+
+    /**
      * Returns AccountBalance information
      * @return vector of filled AccountBalance structures
      * @throws nlohmann::json::exception, std::exception
