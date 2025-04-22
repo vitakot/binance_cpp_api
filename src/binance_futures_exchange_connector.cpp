@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 */
 
-#include <vk/binance/binance_exchange_connector.h>
+#include <vk/binance/binance_futures_exchange_connector.h>
 #include "vk/binance/binance_futures_rest_client.h"
 #include "vk/binance/binance_futures_ws_client.h"
 #include "vk/binance/binance_ws_stream_manager.h"
@@ -177,18 +177,21 @@ Balance BinanceFuturesExchangeConnector::getAccountBalance(const std::string& cu
     return retVal;
 }
 
-FundingRate BinanceFuturesExchangeConnector::getLastFundingRate(const std::string& symbol) const {
+FundingRate BinanceFuturesExchangeConnector::getFundingRate(const std::string& symbol) const {
     const auto fr = m_p->restClient->getLastFundingRate(symbol);
     return {fr.m_symbol, fr.m_fundingRate, fr.m_fundingTime};
 }
 
-std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates(
-    const std::string& symbol, const std::int64_t startTime, const std::int64_t endTime) const {
+std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates() const {
     std::vector<FundingRate> retVal;
 
-    for (const auto fRates = m_p->restClient->getFundingRates(symbol, startTime, endTime); const auto& fr : fRates) {
-        retVal.push_back({fr.m_symbol, fr.m_fundingRate, fr.m_fundingTime, {}});
-    }
+    //m_p->restClient->getLastFundingRate()
+
+
     return retVal;
+}
+
+std::int64_t BinanceFuturesExchangeConnector::getServerTime() const {
+    return m_p->restClient->getServerTime();
 }
 }
