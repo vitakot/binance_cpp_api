@@ -86,7 +86,7 @@ BinanceFuturesExchangeConnector::~BinanceFuturesExchangeConnector() {
     m_p->restClient.reset();
 }
 
-std::string BinanceFuturesExchangeConnector::name() const {
+std::string BinanceFuturesExchangeConnector::exchangeId() const {
     return std::string(magic_enum::enum_name(ExchangeId::BinanceFutures));
 }
 

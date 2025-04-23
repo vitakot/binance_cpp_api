@@ -25,7 +25,7 @@ public:
 
     ~BinanceFuturesExchangeConnector() override;
 
-    [[nodiscard]] std::string name() const override;
+    [[nodiscard]] std::string exchangeId() const override;
 
     [[nodiscard]] std::string version() const override;
 
@@ -57,8 +57,8 @@ public:
 BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
     if (!g_moduleFactory) {
         FactoryInfo factoryInfo;
-        factoryInfo.m_description = std::string(magic_enum::enum_name(ExchangeId::BinanceFutures));
-        factoryInfo.m_version = "1.0.4";
+        factoryInfo.m_id = std::string(magic_enum::enum_name(ExchangeId::BinanceFutures));
+        factoryInfo.m_description = "Binance CEX - Futures";
 
         g_moduleFactory = new ModuleFactory(factoryInfo);
         g_moduleFactory->registerClassByName<IExchangeConnector>(
