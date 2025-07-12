@@ -27,6 +27,7 @@ endif()
 
 set(HEADERS
         include/vk/binance/binance_futures_rest_client.h
+        include/vk/binance/binance_spot_rest_client.h
         include/vk/binance/binance_futures_ws_client.h
         include/vk/binance/binance_models.h
         include/vk/binance/binance_event_models.h
@@ -40,6 +41,7 @@ set(SOURCES
         src/binance_models.cpp
         src/binance_event_models.cpp
         src/binance_futures_rest_client.cpp
+        src/binance_spot_rest_client.cpp
         src/binance_futures_ws_client.cpp
         src/binance_http_session.cpp
         src/binance_futures_ws_session.cpp
