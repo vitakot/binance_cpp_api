@@ -16,7 +16,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 
 namespace vk::binance::futures {
 /**
- * WebSocket Events. Some are Upper Case some not - Binance mess
+ * WebSocket Events. Some are Upper Case, some not - Binance mess
  */
 enum class EventType : std::int32_t {
     UNDEFINED,

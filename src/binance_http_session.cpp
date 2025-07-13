@@ -71,7 +71,7 @@ HTTPSession::HTTPSession(const std::string &apiKey, const std::string &apiSecret
     m_p->m_apiSecret = apiSecret;
 
     /// 2400 is the default value according to https://binance-docs.github.io/apidocs/futures/en/#limits
-    m_p->m_weightLimit = 2400 * 0.95;
+    m_p->m_weightLimit = 2400 * 0.85;
     spdlog::info(fmt::format("API Weight limit: {}", m_p->m_weightLimit));
 }
 

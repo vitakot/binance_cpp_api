@@ -12,7 +12,12 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include <mutex>
 #include <fmt/format.h>
 #include <thread>
-#include <magic_enum.hpp>
+
+#ifdef _WIN32
+#include "magic_enum/magic_enum.hpp"
+#else
+#include "magic_enum.hpp"
+#endif
 
 using namespace std::chrono_literals;
 

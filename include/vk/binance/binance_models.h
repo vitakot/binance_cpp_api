@@ -50,7 +50,7 @@ enum class ExecutionType : std::int32_t {
 };
 
 /**
- * GTC - Good till cancelled
+ * GTC - Good till canceled
  * IOC  # Immediate or cancel
  * FOK  # Fill or kill
  */
@@ -221,7 +221,8 @@ enum class SymbolFilter : std::int32_t {
     MAX_NUM_ORDERS,
     MAX_NUM_ALGO_ORDERS,
     PERCENT_PRICE,
-    MIN_NOTIONAL
+    MIN_NOTIONAL,
+    POSITION_RISK_CONTROL
 };
 
 enum class ContractType : std::int32_t {
