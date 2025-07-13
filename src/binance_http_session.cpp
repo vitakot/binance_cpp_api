@@ -218,14 +218,19 @@ http::response<http::string_body> HTTPSession::P::request(
     http::response<http::string_body> response;
     http::read(stream, buffer, response);
 
-    for (auto &h: response.base()) {
-        if (h.name_string() == "X-MBX-USED-WEIGHT-1M") {
-            m_usedWeight = std::stoi(std::string(h.value()));
-        } else if (h.name_string() == "Date") {
-            const auto dateString = std::string(h.value());
-            std::string timeFormat = "%a, %d %b %Y %H:%M:%S";
-            m_lastResponseTime = getTimeFromString(dateString, timeFormat);
-        }
+    std::string limiterName("X-MBX-USED-WEIGHT-1M");
+
+    for (auto &h : response.base()) {
+      if (std::ranges::equal(h.name_string(), limiterName, [](auto a, auto b) {
+            return std::tolower(static_cast<unsigned char>(a)) ==
+                   std::tolower(static_cast<unsigned char>(b));
+          })) {
+        m_usedWeight = std::stoi(std::string(h.value()));
+      } else if (h.name_string() == "Date") {
+        const auto dateString = std::string(h.value());
+        std::string timeFormat = "%a, %d %b %Y %H:%M:%S";
+        m_lastResponseTime = getTimeFromString(dateString, timeFormat);
+      }
     }
 
     if (m_usedWeight >= m_weightLimit) {
