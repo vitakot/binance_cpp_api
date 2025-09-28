@@ -215,12 +215,13 @@ http::response<http::string_body> HTTPSession::P::request(
 
     http::write(stream, req);
     beast::flat_buffer buffer;
-    http::response<http::string_body> response;
-    http::read(stream, buffer, response);
+    http::response_parser<http::string_body> parser;
+    parser.body_limit((std::numeric_limits<std::uint64_t>::max)());
+    http::read(stream, buffer, parser);
 
     std::string limiterName("X-MBX-USED-WEIGHT-1M");
 
-    for (auto &h : response.base()) {
+    for (auto &h : parser.get().base()) {
       if (std::ranges::equal(h.name_string(), limiterName, [](auto a, auto b) {
             return std::tolower(static_cast<unsigned char>(a)) ==
                    std::tolower(static_cast<unsigned char>(b));
@@ -241,13 +242,14 @@ http::response<http::string_body> HTTPSession::P::request(
 
     boost::system::error_code ec;
     stream.shutdown(ec);
+    
     if (ec == boost::asio::error::eof) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
         ec.assign(0, ec.category());
     }
 
-    return response;
+    return parser.get();
 }
 
 void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
