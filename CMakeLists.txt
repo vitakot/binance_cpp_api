@@ -59,4 +59,4 @@ else ()
 
 endif ()
 
-target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
+target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
