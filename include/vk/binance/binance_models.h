@@ -109,7 +109,6 @@ struct RateLimit final : IJson {
 
 struct ErrorResponse final : IJson {
     int m_code{};
-
     std::string m_msg{};
 
     [[nodiscard]] nlohmann::json toJson() const override;

@@ -23,7 +23,7 @@ include_directories(include vk_cpp_common/include SYSTEM ${Boost_INCLUDE_DIR} ${
 
 if (NOT TARGET vk_common)
     add_subdirectory(vk_cpp_common)
-endif()
+endif ()
 
 set(HEADERS
         include/vk/binance/binance_futures_rest_client.h
@@ -59,4 +59,8 @@ else ()
 
 endif ()
 
-target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
+target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
+
+if (NOT MSVC)
+    target_link_libraries(binance_api atomic)
+endif ()
