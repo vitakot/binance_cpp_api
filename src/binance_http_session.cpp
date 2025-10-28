@@ -21,7 +21,7 @@ auto API_SPOT_URI = "api.binance.com";
 auto API_FUTURES_URI = "fapi.binance.com";
 
 auto PRIVATE_API_SPOT = "/api/v3/";
-auto PUBLIC_API_SPOT = "/api/v1/";
+auto PUBLIC_API_SPOT = "/api/v3/";
 
 auto PRIVATE_API_FUTURES = "/fapi/v1/";
 auto PUBLIC_API_FUTURES = "/fapi/v1/";
