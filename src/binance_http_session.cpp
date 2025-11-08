@@ -21,7 +21,7 @@ auto API_SPOT_URI = "api.binance.com";
 auto API_FUTURES_URI = "fapi.binance.com";
 
 auto PRIVATE_API_SPOT = "/api/v3/";
-auto PUBLIC_API_SPOT = "/api/v1/";
+auto PUBLIC_API_SPOT = "/api/v3/";
 
 auto PRIVATE_API_FUTURES = "/fapi/v1/";
 auto PUBLIC_API_FUTURES = "/fapi/v1/";
@@ -71,7 +71,7 @@ HTTPSession::HTTPSession(const std::string &apiKey, const std::string &apiSecret
     m_p->m_apiSecret = apiSecret;
 
     /// 2400 is the default value according to https://binance-docs.github.io/apidocs/futures/en/#limits
-    m_p->m_weightLimit = 2400 * 0.95;
+    m_p->m_weightLimit = 2400 * 0.85;
     spdlog::info(fmt::format("API Weight limit: {}", m_p->m_weightLimit));
 }
 
@@ -215,17 +215,23 @@ http::response<http::string_body> HTTPSession::P::request(
 
     http::write(stream, req);
     beast::flat_buffer buffer;
-    http::response<http::string_body> response;
-    http::read(stream, buffer, response);
+    http::response_parser<http::string_body> parser;
+    parser.body_limit((std::numeric_limits<std::uint64_t>::max)());
+    http::read(stream, buffer, parser);
 
-    for (auto &h: response.base()) {
-        if (h.name_string() == "X-MBX-USED-WEIGHT-1M") {
-            m_usedWeight = std::stoi(std::string(h.value()));
-        } else if (h.name_string() == "Date") {
-            const auto dateString = std::string(h.value());
-            std::string timeFormat = "%a, %d %b %Y %H:%M:%S";
-            m_lastResponseTime = getTimeFromString(dateString, timeFormat);
-        }
+    std::string limiterName("X-MBX-USED-WEIGHT-1M");
+
+    for (auto &h : parser.get().base()) {
+      if (std::ranges::equal(h.name_string(), limiterName, [](auto a, auto b) {
+            return std::tolower(static_cast<unsigned char>(a)) ==
+                   std::tolower(static_cast<unsigned char>(b));
+          })) {
+        m_usedWeight = std::stoi(std::string(h.value()));
+      } else if (h.name_string() == "Date") {
+        const auto dateString = std::string(h.value());
+        std::string timeFormat = "%a, %d %b %Y %H:%M:%S";
+        m_lastResponseTime = getTimeFromString(dateString, timeFormat);
+      }
     }
 
     if (m_usedWeight >= m_weightLimit) {
@@ -236,13 +242,14 @@ http::response<http::string_body> HTTPSession::P::request(
 
     boost::system::error_code ec;
     stream.shutdown(ec);
+    
     if (ec == boost::asio::error::eof) {
         // Rationale:
         // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
         ec.assign(0, ec.category());
     }
 
-    return response;
+    return parser.get();
 }
 
 void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {

@@ -11,7 +11,6 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 
 #include <vk/utils/log_utils.h>
 #include "binance_models.h"
-#include "binance_event_models.h"
 #include "binance_futures_ws_session.h"
 #include <string>
 
