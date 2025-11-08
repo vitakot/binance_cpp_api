@@ -62,5 +62,5 @@ endif ()
 target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
 
 if (NOT MSVC)
-    target_link_libraries(binance_api atomic)
+    target_link_libraries(binance_api PRIVATE atomic)
 endif ()
