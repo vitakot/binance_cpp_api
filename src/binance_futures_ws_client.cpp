@@ -10,7 +10,6 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include "vk/utils/json_utils.h"
 #include <boost/beast/core.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <fmt/format.h>
 #include <thread>
 
 using namespace std::chrono_literals;
