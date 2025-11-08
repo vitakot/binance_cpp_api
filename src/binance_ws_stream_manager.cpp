@@ -10,7 +10,6 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include "vk/binance/binance_ws_stream_manager.h"
 #include "vk/binance/binance_futures_ws_client.h"
 #include <mutex>
-#include <fmt/format.h>
 #include <thread>
 #include <magic_enum.hpp>
 
