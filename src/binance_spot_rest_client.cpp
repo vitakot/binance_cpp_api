@@ -66,7 +66,7 @@ http::response<http::string_body> checkResponse(const http::response<http::strin
 
 RESTClient::RESTClient(const std::string &apiKey, const std::string &apiSecret) : m_p(
     std::make_unique<P>(this)) {
-    m_p->m_httpSession = std::make_shared<HTTPSession>(apiKey, apiSecret, true);
+    m_p->m_httpSession = std::make_shared<HTTPSession>(apiKey, apiSecret, false);
 }
 
 RESTClient::~RESTClient() = default;

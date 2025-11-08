@@ -80,6 +80,7 @@ void testBinance() {
     const auto nowTimestamp = std::chrono::seconds(std::time(nullptr)).count() * 1000;
     constexpr int64_t thenTimestamp = 1662725807000;
 
+    auto exchange = restClient->getExchangeInfo(true);
     auto candles = restClient->getHistoricalPrices("BTCUSDT", CandleInterval::_1m, thenTimestamp, nowTimestamp);
 }
 
@@ -400,12 +401,12 @@ void testFRMulti() {
 }
 
 int main() {
-    // testBinance();
+    testBinance();
     // testWsManagerCandles();
     // testCandlesLimits();
     // testRisk();
     // measureRestResponses();
-    testFRMulti();
+    // testFRMulti();
     //testAccountBalance();
     return getchar();
 }

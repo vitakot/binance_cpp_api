@@ -23,7 +23,7 @@ public:
     static bool isValidCandleResolution(std::int32_t resolution, CandleInterval &candleInterval);
 
     /**
-     * Get number of ms for given candle interval
+     * Get a number of ms for a given candle interval
      * @param candleInterval
      * @return
      */

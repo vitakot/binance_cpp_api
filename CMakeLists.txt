@@ -4,7 +4,7 @@ project(binance_api)
 set(CMAKE_CXX_STANDARD 20)
 
 if (MSVC)
-    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj -DVERBOSE_LOG)
+    add_definitions(-D_WIN32_WINNT=0x0A00 /bigobj /utf-8 -DVERBOSE_LOG)
 else ()
     add_definitions(-fPIC)
 endif ()
@@ -23,10 +23,11 @@ include_directories(include vk_cpp_common/include SYSTEM ${Boost_INCLUDE_DIR} ${
 
 if (NOT TARGET vk_common)
     add_subdirectory(vk_cpp_common)
-endif()
+endif ()
 
 set(HEADERS
         include/vk/binance/binance_futures_rest_client.h
+        include/vk/binance/binance_spot_rest_client.h
         include/vk/binance/binance_futures_ws_client.h
         include/vk/binance/binance_models.h
         include/vk/binance/binance_event_models.h
@@ -40,6 +41,7 @@ set(SOURCES
         src/binance_models.cpp
         src/binance_event_models.cpp
         src/binance_futures_rest_client.cpp
+        src/binance_spot_rest_client.cpp
         src/binance_futures_ws_client.cpp
         src/binance_http_session.cpp
         src/binance_futures_ws_session.cpp
@@ -53,8 +55,12 @@ else ()
     add_library(binance_api STATIC ${SOURCES} ${HEADERS})
 
     add_executable(test test/main.cpp)
-    target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
+    target_link_libraries(test PRIVATE spdlog::spdlog binance_api OpenSSL::Crypto)
 
 endif ()
 
-target_link_libraries(binance_api PRIVATE OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json atomic)
+target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
+
+if (NOT MSVC)
+    target_link_libraries(binance_api atomic)
+endif ()
