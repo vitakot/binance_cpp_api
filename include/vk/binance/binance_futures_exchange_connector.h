@@ -57,7 +57,7 @@ public:
     }
 };
 
-#ifndef NO_MODULE_MANAGER
+
 // Must not be inline!
 BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
     if (!g_moduleFactory) {
@@ -75,6 +75,5 @@ BOOST_SYMBOL_EXPORT IModuleFactory *getModuleFactory() {
 
     return g_moduleFactory;
 }
-#endif
 }
 #endif //INCLUDE_VK_BINANCE_EXCHANGE_CONNECTOR_H

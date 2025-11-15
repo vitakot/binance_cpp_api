@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.30)
 project(binance_api)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -55,11 +55,11 @@ else ()
     add_library(binance_api STATIC ${SOURCES} ${HEADERS})
 
     add_executable(test test/main.cpp)
-    target_link_libraries(test PRIVATE spdlog::spdlog binance_api OpenSSL::Crypto)
+    target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
 
 endif ()
 
-target_link_libraries(binance_api PRIVATE spdlog::spdlog OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
+target_link_libraries(binance_api PRIVATE spdlog::spdlog_header_only OpenSSL::Crypto OpenSSL::SSL vk_common nlohmann_json::nlohmann_json)
 
 if (NOT MSVC)
     target_link_libraries(binance_api PRIVATE atomic)
