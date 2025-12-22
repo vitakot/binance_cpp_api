@@ -11,7 +11,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 #include "vk/binance/binance_futures_ws_client.h"
 #include <mutex>
 #include <thread>
-#include "magic_enum.hpp"
+#include "vk/utils/magic_enum_wrapper.hpp"
 
 
 using namespace std::chrono_literals;
