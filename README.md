@@ -15,7 +15,7 @@ A modern C++20 library for interacting with the Binance Cryptocurrency Exchange 
 
 This project relies on the following C++ libraries:
 
--   **[Boost](https://www.boost.org/)** (1.83+)
+-   **[Boost](https://www.boost.org/)** (1.88+)
 -   **[OpenSSL](https://www.openssl.org/)**
 -   **[nlohmann_json](https://github.com/nlohmann/json)**
 -   **[spdlog](https://github.com/gabime/spdlog)**
@@ -30,7 +30,7 @@ The project is built using CMake. To use it in your project, you can add it as a
 ### CMakeLists.txt Example
 
 ```cmake
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 4.0)
 project(my_trading_bot)
 
 set(CMAKE_CXX_STANDARD 20)
