@@ -13,8 +13,8 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 
 namespace vk {
 struct BinanceFuturesExchangeConnector::P {
-    std::shared_ptr<binance::futures::RESTClient> m_restClient{};
-    std::unique_ptr<binance::futures::WSStreamManager> m_streamManager{};
+    std::shared_ptr<binance::futures::RESTClient> restClient{};
+    std::unique_ptr<binance::futures::WSStreamManager> streamManager{};
 
     static binance::Side generalOrderSideToBinanceOrderSide(const OrderSide& side) {
         switch (side) {
@@ -76,14 +76,14 @@ struct BinanceFuturesExchangeConnector::P {
 };
 
 BinanceFuturesExchangeConnector::BinanceFuturesExchangeConnector() : m_p(std::make_unique<P>()) {
-    m_p->m_restClient = std::make_shared<binance::futures::RESTClient>("","");
-    m_p->m_streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->m_restClient);
-    m_p->m_restClient->updateExchangeInfo(true);
+    m_p->restClient = std::make_shared<binance::futures::RESTClient>("","");
+    m_p->streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->restClient);
+    m_p->restClient->updateExchangeInfo(true);
 }
 
 BinanceFuturesExchangeConnector::~BinanceFuturesExchangeConnector() {
-    m_p->m_streamManager.reset();
-    m_p->m_restClient.reset();
+    m_p->streamManager.reset();
+    m_p->restClient.reset();
 }
 
 std::string BinanceFuturesExchangeConnector::exchangeId() const {
@@ -95,72 +95,72 @@ std::string BinanceFuturesExchangeConnector::version() const {
 }
 
 void BinanceFuturesExchangeConnector::setLoggerCallback(const onLogMessage& onLogMessageCB) {
-    m_p->m_streamManager->setLoggerCallback(onLogMessageCB);
+    m_p->streamManager->setLoggerCallback(onLogMessageCB);
 }
 
 void BinanceFuturesExchangeConnector::login(const std::tuple<std::string, std::string, std::string>& credentials) {
-    m_p->m_streamManager.reset();
-    m_p->m_restClient.reset();
-    m_p->m_restClient = std::make_shared<binance::futures::RESTClient>(std::get<0>(credentials),
+    m_p->streamManager.reset();
+    m_p->restClient.reset();
+    m_p->restClient = std::make_shared<binance::futures::RESTClient>(std::get<0>(credentials),
                                                                      std::get<1>(credentials));
-    m_p->m_streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->m_restClient);
-    m_p->m_restClient->updateExchangeInfo(true);
+    m_p->streamManager = std::make_unique<binance::futures::WSStreamManager>(m_p->restClient);
+    m_p->restClient->updateExchangeInfo(true);
 }
 
 Trade BinanceFuturesExchangeConnector::placeOrder(const Order& order) {
     Trade retVal;
 
     binance::futures::Order binanceOrder;
-    binanceOrder.m_symbol = order.symbol;
-    binanceOrder.m_side = P::generalOrderSideToBinanceOrderSide(order.side);
-    binanceOrder.m_type = P::generalOrderTypeToBinanceOrderType(order.type);
-    binanceOrder.m_timeInForce = P::generalTImeInForceToBinanceTimeInForce(order.timeInForce);
-    binanceOrder.m_quantity = order.quantity;
-    binanceOrder.m_newOrderRespType = binance::OrderRespType::RESULT;
-    binanceOrder.m_newClientOrderId = order.clientOrderId;
+    binanceOrder.symbol = order.symbol;
+    binanceOrder.side = P::generalOrderSideToBinanceOrderSide(order.side);
+    binanceOrder.type = P::generalOrderTypeToBinanceOrderType(order.type);
+    binanceOrder.timeInForce = P::generalTImeInForceToBinanceTimeInForce(order.timeInForce);
+    binanceOrder.quantity = order.quantity;
+    binanceOrder.newOrderRespType = binance::OrderRespType::RESULT;
+    binanceOrder.newClientOrderId = order.clientOrderId;
 
-    binance::futures::OrderResponse orderResponse = m_p->m_restClient->sendOrder(binanceOrder);
+    binance::futures::OrderResponse orderResponse = m_p->restClient->sendOrder(binanceOrder);
 
-    retVal.fillTime = orderResponse.m_timestamp;
-    retVal.orderStatus = P::binanceOrderStatusToGeneralOrderStatus(orderResponse.m_orderStatus);
-    retVal.averagePrice = orderResponse.m_avgPrice;
-    retVal.filledQuantity = orderResponse.m_executedQty;
+    retVal.fillTime = orderResponse.timestamp;
+    retVal.orderStatus = P::binanceOrderStatusToGeneralOrderStatus(orderResponse.orderStatus);
+    retVal.averagePrice = orderResponse.avgPrice;
+    retVal.filledQuantity = orderResponse.executedQty;
 
     return retVal;
 }
 
 TickerPrice BinanceFuturesExchangeConnector::getTickerPrice(const std::string& symbol) const {
     TickerPrice retVal;
-    const binance::futures::BookTickerPrice bookTickerPrice = m_p->m_restClient->getBookTickerPrice(symbol);
-    retVal.askPrice = bookTickerPrice.m_askPrice;
-    retVal.bidPrice = bookTickerPrice.m_bidPrice;
+    const binance::futures::BookTickerPrice bookTickerPrice = m_p->restClient->getBookTickerPrice(symbol);
+    retVal.askPrice = bookTickerPrice.askPrice;
+    retVal.bidPrice = bookTickerPrice.bidPrice;
     return retVal;
 }
 
 std::vector<Ticker> BinanceFuturesExchangeConnector::getTickerInfo(const std::string& symbol) const {
     std::vector<Ticker> retVal;
     std::vector<binance::futures::Symbol> symbolsToSearch;
-    const auto exchangeInfo = m_p->m_restClient->getExchangeInfo();
+    const auto exchangeInfo = m_p->restClient->getExchangeInfo();
 
     constexpr auto symbolContract = binance::futures::ContractType::PERPETUAL;
     const auto symbolType = std::string(magic_enum::enum_name(symbolContract));
 
-    for (const auto& el : exchangeInfo.m_symbols) {
-        if (el.m_contractType == symbolType && el.m_quoteAsset == "USDT" && el.m_status ==
+    for (const auto& el : exchangeInfo.symbols) {
+        if (el.contractType == symbolType && el.quoteAsset == "USDT" && el.status ==
             binance::ContractStatus::TRADING) {
             symbolsToSearch.push_back(el);
         }
     }
 
     for (const auto& el : symbolsToSearch) {
-        if ((!symbol.empty() && el.m_symbol == symbol) || symbol.empty()) {
+        if ((!symbol.empty() && el.symbol == symbol) || symbol.empty()) {
             Ticker ticker;
             ticker.marketCategory = MarketCategory::Futures;
-            ticker.symbol = el.m_symbol;
-            ticker.baseAsset = el.m_baseAsset;
-            ticker.marginAsset = el.m_marginAsset;
-            ticker.quoteAsset = el.m_quoteAsset;
-            ticker.displayName = el.m_pair;
+            ticker.symbol = el.symbol;
+            ticker.baseAsset = el.baseAsset;
+            ticker.marginAsset = el.marginAsset;
+            ticker.quoteAsset = el.quoteAsset;
+            ticker.displayName = el.pair;
             retVal.push_back(ticker);
         }
     }
@@ -171,27 +171,27 @@ std::vector<Ticker> BinanceFuturesExchangeConnector::getTickerInfo(const std::st
 Balance BinanceFuturesExchangeConnector::getAccountBalance(const std::string& currency) const {
     Balance retVal;
 
-    for (const auto accountBalances = m_p->m_restClient->getAccountBalances(); const auto& el : accountBalances) {
-        if (el.m_asset == currency) {
-            retVal.balance = el.m_balance;
+    for (const auto accountBalances = m_p->restClient->getAccountBalances(); const auto& el : accountBalances) {
+        if (el.asset == currency) {
+            retVal.balance = el.balance;
         }
     }
     return retVal;
 }
 
 FundingRate BinanceFuturesExchangeConnector::getFundingRate(const std::string& symbol) const {
-    const auto fr = m_p->m_restClient->getLastFundingRate(symbol);
-    return {fr.m_symbol, fr.m_fundingRate, fr.m_fundingTime};
+    const auto fr = m_p->restClient->getLastFundingRate(symbol);
+    return {fr.symbol, fr.fundingRate, fr.fundingTime};
 }
 
 std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates() const {
     std::vector<FundingRate> retVal;
 
-    for (const auto& mp : m_p->m_restClient->getMarkPrices()) {
+    for (const auto& mp : m_p->restClient->getMarkPrices()) {
         FundingRate fr;
-        fr.symbol = mp.m_symbol;
-        fr.fundingRate = mp.m_lastFundingRate;
-        fr.fundingTime = mp.m_nextFundingTime;
+        fr.symbol = mp.symbol;
+        fr.fundingRate = mp.lastFundingRate;
+        fr.fundingTime = mp.nextFundingTime;
         retVal.push_back(fr);
     }
 
@@ -199,6 +199,6 @@ std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates() cons
 }
 
 std::int64_t BinanceFuturesExchangeConnector::getServerTime() const {
-    return m_p->m_restClient->getServerTime();
+    return m_p->restClient->getServerTime();
 }
 }

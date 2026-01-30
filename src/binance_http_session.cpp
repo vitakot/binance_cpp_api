@@ -30,20 +30,20 @@ auto PRIVATE_API_FUTURES_V2 = "/fapi/v2/";
 auto PUBLIC_API_FUTURES_V2 = "/fapi/v2/";
 
 struct HTTPSession::P {
-    net::io_context m_ioc;
-    std::string m_apiKey;
-    std::string m_apiSecret;
-    std::string m_uri;
-    std::string m_publicApi;
-    std::string m_privateApi;
-    std::string m_publicApiV2;
-    std::string m_privateApiV2;
-    std::atomic<std::int32_t> m_usedWeight = 0;
-    std::atomic<std::tm> m_lastResponseTime{};
-    std::int32_t m_weightLimit{};
-    const EVP_MD *m_evp_md;
+    net::io_context ioc;
+    std::string apiKey;
+    std::string apiSecret;
+    std::string uri;
+    std::string publicApi;
+    std::string privateApi;
+    std::string publicApiV2;
+    std::string privateApiV2;
+    std::atomic<std::int32_t> usedWeight = 0;
+    std::atomic<std::tm> lastResponseTime{};
+    std::int32_t weightLimit{};
+    const EVP_MD *evpMd;
 
-    P() : m_evp_md(EVP_sha256()) {
+    P() : evpMd(EVP_sha256()) {
     }
 
     http::response<http::string_body> request(http::request<http::string_body> req);
@@ -54,25 +54,25 @@ struct HTTPSession::P {
 HTTPSession::HTTPSession(const std::string &apiKey, const std::string &apiSecret, const bool futures) : m_p(
     std::make_unique<P>()) {
     if (futures) {
-        m_p->m_uri = API_FUTURES_URI;
-        m_p->m_publicApi = PUBLIC_API_FUTURES;
-        m_p->m_privateApi = PRIVATE_API_FUTURES;
-        m_p->m_publicApiV2 = PUBLIC_API_FUTURES_V2;
-        m_p->m_privateApiV2 = PRIVATE_API_FUTURES_V2;
+        m_p->uri = API_FUTURES_URI;
+        m_p->publicApi = PUBLIC_API_FUTURES;
+        m_p->privateApi = PRIVATE_API_FUTURES;
+        m_p->publicApiV2 = PUBLIC_API_FUTURES_V2;
+        m_p->privateApiV2 = PRIVATE_API_FUTURES_V2;
     } else {
-        m_p->m_uri = API_SPOT_URI;
-        m_p->m_publicApi = PUBLIC_API_SPOT;
-        m_p->m_privateApi = PRIVATE_API_SPOT;
-        m_p->m_publicApiV2 = PUBLIC_API_SPOT;
-        m_p->m_privateApiV2 = PRIVATE_API_SPOT;
+        m_p->uri = API_SPOT_URI;
+        m_p->publicApi = PUBLIC_API_SPOT;
+        m_p->privateApi = PRIVATE_API_SPOT;
+        m_p->publicApiV2 = PUBLIC_API_SPOT;
+        m_p->privateApiV2 = PRIVATE_API_SPOT;
     }
 
-    m_p->m_apiKey = apiKey;
-    m_p->m_apiSecret = apiSecret;
+    m_p->apiKey = apiKey;
+    m_p->apiSecret = apiSecret;
 
     /// 2400 is the default value according to https://binance-docs.github.io/apidocs/futures/en/#limits
-    m_p->m_weightLimit = 2400 * 0.85;
-    spdlog::info(fmt::format("API Weight limit: {}", m_p->m_weightLimit));
+    m_p->weightLimit = 2400 * 0.85;
+    spdlog::info(fmt::format("API Weight limit: {}", m_p->weightLimit));
 }
 
 HTTPSession::~HTTPSession() = default;
@@ -87,9 +87,9 @@ http::response<http::string_body> HTTPSession::get(const std::string &target, co
     std::string endpoint;
 
     if (isPublic) {
-        endpoint = m_p->m_publicApi + finalTarget;
+        endpoint = m_p->publicApi + finalTarget;
     } else {
-        endpoint = m_p->m_privateApi + finalTarget;
+        endpoint = m_p->privateApi + finalTarget;
     }
 
     const http::request<http::string_body> req{http::verb::get, endpoint, 11};
@@ -106,9 +106,9 @@ http::response<http::string_body> HTTPSession::getV2(const std::string &target, 
     std::string endpoint;
 
     if (isPublic) {
-        endpoint = m_p->m_publicApiV2 + finalTarget;
+        endpoint = m_p->publicApiV2 + finalTarget;
     } else {
-        endpoint = m_p->m_privateApiV2 + finalTarget;
+        endpoint = m_p->privateApiV2 + finalTarget;
     }
 
     const http::request<http::string_body> req{http::verb::get, endpoint, 11};
@@ -131,9 +131,9 @@ HTTPSession::post(const std::string &target, const std::string &payload, const b
     std::string endpoint;
 
     if (isPublic) {
-        endpoint = m_p->m_publicApi + finalTarget;
+        endpoint = m_p->publicApi + finalTarget;
     } else {
-        endpoint = m_p->m_privateApi + finalTarget;
+        endpoint = m_p->privateApi + finalTarget;
     }
 
     http::request<http::string_body> req{http::verb::post, endpoint, 11};
@@ -153,9 +153,9 @@ HTTPSession::put(const std::string &target, const std::string &payload, const bo
     std::string endpoint;
 
     if (isPublic) {
-        endpoint = m_p->m_publicApi + finalTarget;
+        endpoint = m_p->publicApi + finalTarget;
     } else {
-        endpoint = m_p->m_privateApi + finalTarget;
+        endpoint = m_p->privateApi + finalTarget;
     }
 
     http::request<http::string_body> req{http::verb::put, endpoint, 11};
@@ -174,9 +174,9 @@ http::response<http::string_body> HTTPSession::del(const std::string &target, co
     std::string endpoint;
 
     if (isPublic) {
-        endpoint = m_p->m_publicApi + finalTarget;
+        endpoint = m_p->publicApi + finalTarget;
     } else {
-        endpoint = m_p->m_privateApi + finalTarget;
+        endpoint = m_p->privateApi + finalTarget;
     }
 
     const http::request<http::string_body> req{http::verb::delete_, endpoint, 11};
@@ -185,17 +185,17 @@ http::response<http::string_body> HTTPSession::del(const std::string &target, co
 
 http::response<http::string_body> HTTPSession::P::request(
     http::request<http::string_body> req) {
-    req.set(http::field::host, m_uri);
+    req.set(http::field::host, uri);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     ssl::context ctx{ssl::context::sslv23_client};
     ctx.set_default_verify_paths();
 
-    tcp::resolver resolver{m_ioc};
-    ssl::stream<tcp::socket> stream{m_ioc, ctx};
+    tcp::resolver resolver{ioc};
+    ssl::stream<tcp::socket> stream{ioc, ctx};
 
     // Set SNI Hostname (many hosts need this to handshake successfully)
-    if (!SSL_set_tlsext_host_name(stream.native_handle(), m_uri.c_str())) {
+    if (!SSL_set_tlsext_host_name(stream.native_handle(), uri.c_str())) {
         boost::system::error_code ec{
             static_cast<int>(ERR_get_error()),
             net::error::get_ssl_category()
@@ -203,11 +203,11 @@ http::response<http::string_body> HTTPSession::P::request(
         throw boost::system::system_error{ec};
     }
 
-    auto const results = resolver.resolve(m_uri, "443");
+    auto const results = resolver.resolve(uri, "443");
     net::connect(stream.next_layer(), results.begin(), results.end());
     stream.handshake(ssl::stream_base::client);
 
-    req.set("X-MBX-APIKEY", m_apiKey);
+    req.set("X-MBX-APIKEY", apiKey);
 
     if (req.method() == http::verb::post) {
         req.set(http::field::content_type, "application/json");
@@ -226,16 +226,16 @@ http::response<http::string_body> HTTPSession::P::request(
             return std::tolower(static_cast<unsigned char>(a)) ==
                    std::tolower(static_cast<unsigned char>(b));
           })) {
-        m_usedWeight = std::stoi(std::string(h.value()));
+        usedWeight = std::stoi(std::string(h.value()));
       } else if (h.name_string() == "Date") {
         const auto dateString = std::string(h.value());
         std::string timeFormat = "%a, %d %b %Y %H:%M:%S";
-        m_lastResponseTime = getTimeFromString(dateString, timeFormat);
+        lastResponseTime = getTimeFromString(dateString, timeFormat);
       }
     }
 
-    if (m_usedWeight >= m_weightLimit) {
-        auto secToWeighReset = 60 - m_lastResponseTime.load().tm_sec;
+    if (usedWeight >= weightLimit) {
+        auto secToWeighReset = 60 - lastResponseTime.load().tm_sec;
         spdlog::warn(fmt::format("Weigh limit reached, waiting for reset {} seconds", secToWeighReset));
         std::this_thread::sleep_for(std::chrono::seconds(secToWeighReset));
     }
@@ -265,7 +265,7 @@ void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
     unsigned char digest[SHA256_DIGEST_LENGTH];
     unsigned int digestLength = SHA256_DIGEST_LENGTH;
 
-    HMAC(m_evp_md, m_apiSecret.data(), m_apiSecret.size(),
+    HMAC(evpMd, apiSecret.data(), apiSecret.size(),
          reinterpret_cast<const unsigned char *>(parameters.data()),
          parameters.length(), digest, &digestLength);
 
@@ -278,10 +278,10 @@ void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
 }
 
 void HTTPSession::setWeightLimit(const std::int32_t weightLimit) const {
-    m_p->m_weightLimit = static_cast<std::int32_t>(weightLimit * 0.95);
+    m_p->weightLimit = static_cast<std::int32_t>(weightLimit * 0.95);
 }
 
 std::int32_t HTTPSession::getUsedWeight() const {
-    return m_p->m_usedWeight;
+    return m_p->usedWeight;
 }
 }

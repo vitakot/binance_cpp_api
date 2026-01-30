@@ -29,8 +29,8 @@ private:
     mutable std::recursive_mutex m_locker;
 
 public:
-    RESTClient *m_parent = nullptr;
-    std::shared_ptr<HTTPSession> m_httpSession;
+    RESTClient *parent = nullptr;
+    std::shared_ptr<HTTPSession> httpSession;
 
     [[nodiscard]] Exchange getExchange() const {
         std::lock_guard lk(m_locker);
@@ -47,7 +47,7 @@ public:
                         std::int64_t endTime, std::int32_t limit) const;
 
     explicit P(RESTClient *parent) {
-        m_parent = parent;
+        this->parent = parent;
     }
 };
 
@@ -58,7 +58,7 @@ http::response<http::string_body> checkResponse(const http::response<http::strin
 
         const std::string msg = std::string("Bad HTTP response: ") + std::to_string(response.result_int()) +
                                 ", API Code: " +
-                                std::to_string(errorResponse.m_code) + ", message: " + errorResponse.m_msg;
+                                std::to_string(errorResponse.code) + ", message: " + errorResponse.msg;
         throw std::runtime_error(msg.c_str());
     }
     return response;
@@ -66,7 +66,7 @@ http::response<http::string_body> checkResponse(const http::response<http::strin
 
 RESTClient::RESTClient(const std::string &apiKey, const std::string &apiSecret) : m_p(
     std::make_unique<P>(this)) {
-    m_p->m_httpSession = std::make_shared<HTTPSession>(apiKey, apiSecret, false);
+    m_p->httpSession = std::make_shared<HTTPSession>(apiKey, apiSecret, false);
 }
 
 RESTClient::~RESTClient() = default;
@@ -98,20 +98,20 @@ RESTClient::P::getHistoricalPrices(const std::string &symbol, const CandleInterv
         path.append(std::to_string(limit));
     }
 
-    auto response = checkResponse(m_httpSession->get(path, true));
+    auto response = checkResponse(httpSession->get(path, true));
     CandlesResponse candlesResponse;
     candlesResponse.fromJson(nlohmann::json::parse(response.body()));
 
-    return candlesResponse.m_candles;
+    return candlesResponse.candles;
 }
 
 Exchange RESTClient::getExchangeInfo(const bool force) const {
-    if (m_p->getExchange().m_symbols.empty() || force) {
-        const auto response = checkResponse(m_p->m_httpSession->get("exchangeInfo?", true));
+    if (m_p->getExchange().symbols.empty() || force) {
+        const auto response = checkResponse(m_p->httpSession->get("exchangeInfo?", true));
 
         Exchange exchange;
         exchange.fromJson(nlohmann::json::parse(response.body()));
-        exchange.m_lastUpdateTime = std::time(nullptr);
+        exchange.lastUpdateTime = std::time(nullptr);
         m_p->setExchange(exchange);
     }
 
@@ -119,7 +119,7 @@ Exchange RESTClient::getExchangeInfo(const bool force) const {
 }
 
 void RESTClient::setAPIWeightLimit(const std::int32_t weightLimit) const {
-    m_p->m_httpSession->setWeightLimit(weightLimit);
+    m_p->httpSession->setWeightLimit(weightLimit);
 }
 
 std::vector<Candle>
@@ -149,11 +149,11 @@ RESTClient::getHistoricalPricesSingle(const std::string &symbol, const CandleInt
         path.append(std::to_string(limit));
     }
 
-    auto response = checkResponse(m_p->m_httpSession->get(path, true));
+    auto response = checkResponse(m_p->httpSession->get(path, true));
     CandlesResponse candlesResponse;
     candlesResponse.fromJson(nlohmann::json::parse(response.body()));
 
-    return candlesResponse.m_candles;
+    return candlesResponse.candles;
 }
 
 std::vector<Candle>
@@ -169,7 +169,7 @@ RESTClient::getHistoricalPrices(const std::string &symbol, const CandleInterval 
 
     while (!candles.empty()) {
         retVal.insert(retVal.end(), candles.begin(), candles.end());
-        lastFromTime = candles.back().m_closeTime;
+        lastFromTime = candles.back().closeTime;
         candles.clear();
 
         if (lastFromTime < endTime) {
