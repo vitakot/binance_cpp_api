@@ -97,13 +97,13 @@ void testBinance() {
     while (true) {
         {
             if (const auto ret = wsManager->readEventTickPrice("BTCUSDT")) {
-                std::cout << "BTC price: " << ret->m_a << std::endl;
+                std::cout << "BTC price: " << ret->a << std::endl;
             } else {
                 std::cout << "Error" << std::endl;
             }
         } {
             if (const auto ret = wsManager->readEventTickPrice("ETHUSDT")) {
-                std::cout << "ETH price: " << ret->m_a << std::endl;
+                std::cout << "ETH price: " << ret->a << std::endl;
             } else {
                 std::cout << "Error" << std::endl;
             }
@@ -129,9 +129,9 @@ void testBinance() {
             if (auto ret = wsManager->readEventCandlestick("BTCUSDT", CandleInterval::_1m, true)) {
                 std::stringstream ss;
 
-                std::string candleEventStartTime = vk::getDateTimeStringFromTimeStamp(ret->m_k.m_t,
+                std::string candleEventStartTime = vk::getDateTimeStringFromTimeStamp(ret->k.t,
                     "%Y-%m-%dT%H:%M:%S", true);
-                std::string candleEventStopTime = vk::getDateTimeStringFromTimeStamp(ret->m_k.m_T,
+                std::string candleEventStopTime = vk::getDateTimeStringFromTimeStamp(ret->k.T,
                     "%Y-%m-%dT%H:%M:%S", true);
 
                 ss << "Previous Candle start: " << candleEventStartTime << ", candle end: " << candleEventStopTime;
@@ -326,11 +326,11 @@ void testFR() {
         // const auto data = restClient->getFundingRates("APTUSDT", oldestBNBDate, nowTimestamp, 1000);
         //
         // for (auto i = 0; i < data.size() - 1; i++) {
-        //     if (const auto diff = (data[i + 1].m_fundingTime - data[i].m_fundingTime) / 1000;
+        //     if (const auto diff = (data[i + 1].fundingTime - data[i].fundingTime) / 1000;
         //         diff > 28810 || diff < 28790) {
         //     }
         //
-        //     std::cout << data[i].m_fundingTime << std::endl;
+        //     std::cout << data[i].fundingTime << std::endl;
         // }
 
         const auto fr = restClient->getLastFundingRate("APTUSDT");
@@ -361,10 +361,10 @@ void testBuySellVolume() {
                                                        nowTimestamp);
 
         for (auto i = 0; i < data.size() - 1; i++) {
-            if (const auto diff = data[i + 1].m_timestamp - data[i].m_timestamp; diff != 60 * 60 * 1000) {
+            if (const auto diff = data[i + 1].timestamp - data[i].timestamp; diff != 60 * 60 * 1000) {
             }
 
-            std::cout << data[i].m_timestamp << std::endl;
+            std::cout << data[i].timestamp << std::endl;
         }
     } catch (std::exception &e) {
         logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
@@ -377,7 +377,7 @@ void testAccountBalance() {
         const auto restClient = std::make_shared<futures::RESTClient>(fst, snd);
 
         for (auto balances = restClient->getAccountBalances(); const auto &balance: balances) {
-            logFunction(vk::LogSeverity::Info, fmt::format("Balance: {}", balance.m_balance));
+            logFunction(vk::LogSeverity::Info, fmt::format("Balance: {}", balance.balance));
         }
     } catch (std::exception &e) {
         logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
@@ -391,9 +391,9 @@ void testFRMulti() {
 
     for (const auto& rate : restClient->getMarkPrices()) {
         vk::FundingRate fr;
-        fr.symbol = rate.m_symbol;
-        fr.fundingRate = rate.m_lastFundingRate;
-        fr.fundingTime = rate.m_nextFundingTime;
+        fr.symbol = rate.symbol;
+        fr.fundingRate = rate.lastFundingRate;
+        fr.fundingTime = rate.nextFundingTime;
         retVal.push_back(fr);
     }
 

@@ -13,38 +13,38 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@gmail.com>.
 namespace vk::binance::futures {
 nlohmann::json Event::toJson() const {
     nlohmann::json json;
-    json["e"] = m_e;
-    json["E"] = m_E;
+    json["e"] = e;
+    json["E"] = E;
     return json;
 }
 
 void Event::fromJson(const nlohmann::json &json) {
-    readMagicEnum<EventType>(json, "e", m_e);
-    readValue<std::int64_t>(json, "E", m_E);
+    readMagicEnum<EventType>(json, "e", e);
+    readValue<std::int64_t>(json, "E", E);
 }
 
 nlohmann::json EventTickPrice::toJson() const {
     nlohmann::json json = Event::toJson();
-    json["u"] = m_u;
-    json["s"] = m_s;
-    json["b"] = std::to_string(m_b);
-    json["B"] = std::to_string(m_B);
-    json["a"] = std::to_string(m_a);
-    json["A"] = std::to_string(m_A);
+    json["u"] = u;
+    json["s"] = s;
+    json["b"] = std::to_string(b);
+    json["B"] = std::to_string(B);
+    json["a"] = std::to_string(a);
+    json["A"] = std::to_string(A);
     return json;
 }
 
 void EventTickPrice::fromJson(const nlohmann::json &json) {
     Event::fromJson(json);
 
-    readValue<std::int64_t>(json, "u", m_u);
-    readValue<std::int64_t>(json, "T", m_T);
-    readValue<std::string>(json, "s", m_s);
+    readValue<std::int64_t>(json, "u", u);
+    readValue<std::int64_t>(json, "T", T);
+    readValue<std::string>(json, "s", s);
 
-    m_b = readStringAsDouble(json, "b");
-    m_B = readStringAsDouble(json, "B");
-    m_a = readStringAsDouble(json, "a");
-    m_A = readStringAsDouble(json, "A");
+    b = readStringAsDouble(json, "b");
+    B = readStringAsDouble(json, "B");
+    a = readStringAsDouble(json, "a");
+    A = readStringAsDouble(json, "A");
 }
 
 nlohmann::json EventAccountUpdate::toJson() const {
@@ -65,34 +65,34 @@ void EventBalanceUpdate::fromJson(const nlohmann::json &json) {
 
 nlohmann::json EventOrderUpdate::toJson() const {
     nlohmann::json json = Event::toJson();
-    json["s"] = m_s;
-    json["c"] = m_c;
-    json["S"] = m_S;
-    json["o"] = m_o;
-    json["f"] = m_f;
-    json["q"] = std::to_string(m_q);
-    json["p"] = std::to_string(m_p);
-    json["ap"] = std::to_string(m_ap);
-    json["sp"] = std::to_string(m_sp);
-    json["x"] = m_x;
-    json["X"] = m_X;
-    json["i"] = m_i;
-    json["l"] = std::to_string(m_l);
-    json["z"] = std::to_string(m_z);
-    json["L"] = std::to_string(m_L);
-    json["T"] = m_T;
-    json["t"] = m_t;
-    json["b"] = std::to_string(m_b);
-    json["a"] = std::to_string(m_a);
-    json["m"] = m_m;
-    json["R"] = m_R;
-    json["wt"] = m_wt;
-    json["ot"] = m_ot;
-    json["ps"] = m_ps;
-    json["cp"] = m_cp;
-    json["AP"] = std::to_string(m_AP);
-    json["cr"] = std::to_string(m_cr);
-    json["rp"] = std::to_string(m_rp);
+    json["s"] = s;
+    json["c"] = c;
+    json["S"] = S;
+    json["o"] = o;
+    json["f"] = f;
+    json["q"] = std::to_string(q);
+    json["p"] = std::to_string(p);
+    json["ap"] = std::to_string(ap);
+    json["sp"] = std::to_string(sp);
+    json["x"] = x;
+    json["X"] = X;
+    json["i"] = i;
+    json["l"] = std::to_string(l);
+    json["z"] = std::to_string(z);
+    json["L"] = std::to_string(L);
+    json["T"] = T;
+    json["t"] = t;
+    json["b"] = std::to_string(b);
+    json["a"] = std::to_string(a);
+    json["m"] = m;
+    json["R"] = R;
+    json["wt"] = wt;
+    json["ot"] = ot;
+    json["ps"] = ps;
+    json["cp"] = cp;
+    json["AP"] = std::to_string(AP);
+    json["cr"] = std::to_string(cr);
+    json["rp"] = std::to_string(rp);
 
     return json;
 }
@@ -100,34 +100,34 @@ nlohmann::json EventOrderUpdate::toJson() const {
 void EventOrderUpdate::fromJson(const nlohmann::json &json) {
     Event::fromJson(json);
 
-    readValue<std::string>(json, "s", m_s);
-    readValue<std::string>(json, "c", m_c);
-    readMagicEnum<Side>(json, "S", m_S);
-    readMagicEnum<OrderType>(json, "o", m_o);
-    readMagicEnum<TimeInForce>(json, "f", m_f);
-    m_q = readStringAsDouble(json, "q");
-    m_p = readStringAsDouble(json, "p");
-    m_ap = readStringAsDouble(json, "ap");
-    m_sp = readStringAsDouble(json, "sp");
-    readMagicEnum<ExecutionType>(json, "x", m_x);
-    readMagicEnum<OrderStatus>(json, "X", m_X);
-    readValue<std::int64_t>(json, "i", m_i);
-    m_l = readStringAsDouble(json, "l");
-    m_z = readStringAsDouble(json, "z");
-    m_L = readStringAsDouble(json, "L");
-    readValue<std::int64_t>(json, "T", m_T);
-    readValue<std::int64_t>(json, "t", m_t);
-    m_b = readStringAsDouble(json, "b");
-    m_a = readStringAsDouble(json, "a");
-    readValue<bool>(json, "m", m_m);
-    readValue<bool>(json, "R", m_R);
-    readMagicEnum<WorkingType>(json, "wt", m_wt);
-    readMagicEnum<OrderType>(json, "ot", m_ot);
-    readMagicEnum<PositionSide>(json, "ps", m_ps);
-    readValue<bool>(json, "cp", m_cp);
-    m_AP = readStringAsDouble(json, "AP");
-    m_cr = readStringAsDouble(json, "cr");
-    m_rp = readStringAsDouble(json, "rp");
+    readValue<std::string>(json, "s", s);
+    readValue<std::string>(json, "c", c);
+    readMagicEnum<Side>(json, "S", S);
+    readMagicEnum<OrderType>(json, "o", o);
+    readMagicEnum<TimeInForce>(json, "f", f);
+    q = readStringAsDouble(json, "q");
+    p = readStringAsDouble(json, "p");
+    ap = readStringAsDouble(json, "ap");
+    sp = readStringAsDouble(json, "sp");
+    readMagicEnum<ExecutionType>(json, "x", x);
+    readMagicEnum<OrderStatus>(json, "X", X);
+    readValue<std::int64_t>(json, "i", i);
+    l = readStringAsDouble(json, "l");
+    z = readStringAsDouble(json, "z");
+    L = readStringAsDouble(json, "L");
+    readValue<std::int64_t>(json, "T", T);
+    readValue<std::int64_t>(json, "t", t);
+    b = readStringAsDouble(json, "b");
+    a = readStringAsDouble(json, "a");
+    readValue<bool>(json, "m", m);
+    readValue<bool>(json, "R", R);
+    readMagicEnum<WorkingType>(json, "wt", wt);
+    readMagicEnum<OrderType>(json, "ot", ot);
+    readMagicEnum<PositionSide>(json, "ps", ps);
+    readValue<bool>(json, "cp", cp);
+    AP = readStringAsDouble(json, "AP");
+    cr = readStringAsDouble(json, "cr");
+    rp = readStringAsDouble(json, "rp");
 }
 
 nlohmann::json EventUserData::toJson() const {
@@ -138,7 +138,7 @@ void EventUserData::fromJson(const nlohmann::json &json) {
     Event ev;
     ev.fromJson(json);
 
-    switch (ev.m_e) {
+    switch (ev.e) {
         case EventType::ORDER_TRADE_UPDATE: {
             if (const auto it = json.find("o"); it != json.end()) {
                 EventOrderUpdate evOrderUpdate;
@@ -176,47 +176,47 @@ nlohmann::json EventAggregatedTrade::toJson() const {
 }
 
 void EventAggregatedTrade::fromJson(const nlohmann::json &json) {
-    readValue<std::string>(json, "s", m_s);
-    readValue<std::int64_t>(json, "a", m_a);
-    m_p = readStringAsDouble(json, "p");
-    m_q = readStringAsDouble(json, "q");
-    readValue<std::int64_t>(json, "f", m_f);
-    readValue<std::int64_t>(json, "l", m_l);
-    readValue<std::int64_t>(json, "T", m_T);
-    readValue<bool>(json, "m", m_m);
+    readValue<std::string>(json, "s", s);
+    readValue<std::int64_t>(json, "a", a);
+    p = readStringAsDouble(json, "p");
+    q = readStringAsDouble(json, "q");
+    readValue<std::int64_t>(json, "f", f);
+    readValue<std::int64_t>(json, "l", l);
+    readValue<std::int64_t>(json, "T", T);
+    readValue<bool>(json, "m", m);
 }
 
 [[nodiscard]] nlohmann::json EventCandlestick::Candlestick::toJson() const {
     nlohmann::json json;
-    json["t"] = m_t;
-    json["T"] = m_T;
-    json["s"] = m_s;
-    json["f"] = m_f;
-    json["L"] = m_L;
+    json["t"] = t;
+    json["T"] = T;
+    json["s"] = s;
+    json["f"] = f;
+    json["L"] = L;
 
-    auto intervalString = std::string(magic_enum::enum_name(m_i));
+    auto intervalString = std::string(magic_enum::enum_name(i));
     intervalString.erase(0, 1);
     json["i"] = intervalString;
 
-    json["o"] = std::to_string(m_o);
-    json["h"] = std::to_string(m_h);
-    json["l"] = std::to_string(m_l);
-    json["c"] = std::to_string(m_c);
-    json["v"] = std::to_string(m_v);
-    json["n"] = m_n;
-    json["x"] = m_x;
-    json["q"] = m_q;
-    json["V"] = m_V;
-    json["Q"] = m_Q;
+    json["o"] = std::to_string(o);
+    json["h"] = std::to_string(h);
+    json["l"] = std::to_string(l);
+    json["c"] = std::to_string(c);
+    json["v"] = std::to_string(v);
+    json["n"] = n;
+    json["x"] = x;
+    json["q"] = q;
+    json["V"] = V;
+    json["Q"] = Q;
     return json;
 }
 
 void EventCandlestick::Candlestick::fromJson(const nlohmann::json &json) {
-    readValue<std::int64_t>(json, "t", m_t);
-    readValue<std::int64_t>(json, "T", m_T);
-    readValue<std::string>(json, "s", m_s);
-    readValue<std::int64_t>(json, "f", m_f);
-    readValue<std::int64_t>(json, "L", m_L);
+    readValue<std::int64_t>(json, "t", t);
+    readValue<std::int64_t>(json, "T", T);
+    readValue<std::string>(json, "s", s);
+    readValue<std::int64_t>(json, "f", f);
+    readValue<std::int64_t>(json, "L", L);
 
     std::string interval;
     readValue<std::string>(json, "i", interval);
@@ -224,30 +224,30 @@ void EventCandlestick::Candlestick::fromJson(const nlohmann::json &json) {
 
     if (const auto m_i_val = magic_enum::enum_cast<CandleInterval>(interval, magic_enum::case_insensitive); m_i_val.
         has_value()) {
-        m_i = m_i_val.value();
+        i = m_i_val.value();
     }
 
-    m_o = readStringAsDouble(json, "o");
-    m_h = readStringAsDouble(json, "h");
-    m_l = readStringAsDouble(json, "l");
-    m_c = readStringAsDouble(json, "c");
-    m_v = readStringAsDouble(json, "v");
-    readValue<std::int64_t>(json, "n", m_n);
-    readValue<bool>(json, "x", m_x);
-    m_q = readStringAsDouble(json, "q");
-    m_V = readStringAsDouble(json, "V");
-    m_Q = readStringAsDouble(json, "Q");
+    o = readStringAsDouble(json, "o");
+    h = readStringAsDouble(json, "h");
+    l = readStringAsDouble(json, "l");
+    c = readStringAsDouble(json, "c");
+    v = readStringAsDouble(json, "v");
+    readValue<std::int64_t>(json, "n", n);
+    readValue<bool>(json, "x", x);
+    q = readStringAsDouble(json, "q");
+    V = readStringAsDouble(json, "V");
+    Q = readStringAsDouble(json, "Q");
 }
 
 [[nodiscard]] nlohmann::json EventCandlestick::toJson() const {
     nlohmann::json json;
-    json["s"] = m_s;
-    json["k"] = m_k.toJson();
+    json["s"] = s;
+    json["k"] = k.toJson();
     return json;
 }
 
 void EventCandlestick::fromJson(const nlohmann::json &json) {
-    readValue<std::string>(json, "s", m_s);
-    m_k.fromJson(json["k"]);
+    readValue<std::string>(json, "s", s);
+    k.fromJson(json["k"]);
 }
 }

@@ -97,10 +97,10 @@ enum class ContractStatus : std::int32_t {
 };
 
 struct RateLimit final : IJson {
-    RateLimitInterval m_interval{RateLimitInterval::MINUTE};
-    std::int32_t m_intervalNum{};
-    std::int32_t m_limit{};
-    RateLimitType m_rateLimitType{RateLimitType::REQUEST_WEIGHT};
+    RateLimitInterval interval{RateLimitInterval::MINUTE};
+    std::int32_t intervalNum{};
+    std::int32_t limit{};
+    RateLimitType rateLimitType{RateLimitType::REQUEST_WEIGHT};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -108,8 +108,8 @@ struct RateLimit final : IJson {
 };
 
 struct ErrorResponse final : IJson {
-    int m_code{};
-    std::string m_msg{};
+    int code{};
+    std::string msg{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -117,18 +117,18 @@ struct ErrorResponse final : IJson {
 };
 
 struct Candle final : IJson {
-    std::int64_t m_openTime{};
-    double m_open{};
-    double m_high{};
-    double m_low{};
-    double m_close{};
-    double m_volume{};
-    std::int64_t m_closeTime{};
-    double m_quoteVolume{};
-    std::int64_t m_numberOfTrades{};
-    double m_takerBuyVolume{};
-    double m_takerQuoteVolume{};
-    std::string m_ignore{};
+    std::int64_t openTime{};
+    double open{};
+    double high{};
+    double low{};
+    double close{};
+    double volume{};
+    std::int64_t closeTime{};
+    double quoteVolume{};
+    std::int64_t numberOfTrades{};
+    double takerBuyVolume{};
+    double takerQuoteVolume{};
+    std::string ignore{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -136,7 +136,7 @@ struct Candle final : IJson {
 };
 
 struct CandlesResponse final : IJson {
-    std::vector<Candle> m_candles;
+    std::vector<Candle> candles;
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -147,10 +147,10 @@ struct CandlesResponse final : IJson {
 namespace vk::binance::spot {
 
 struct Symbol final : IJson {
-    std::string m_symbol{};
-    ContractStatus m_status{ContractStatus::TRADING};
-    std::string m_baseAsset{};
-    std::string m_quoteAsset{};
+    std::string symbol{};
+    ContractStatus status{ContractStatus::TRADING};
+    std::string baseAsset{};
+    std::string quoteAsset{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -158,11 +158,11 @@ struct Symbol final : IJson {
 };
 
 struct Exchange final : IJson {
-    std::vector<RateLimit> m_rateLimits{};
-    std::vector<Symbol> m_symbols{};
+    std::vector<RateLimit> rateLimits{};
+    std::vector<Symbol> symbols{};
 
     /// lastUpdateTime is not part of Binance API, it serves for keeping Exchange data up to date
-    std::int64_t m_lastUpdateTime{-1};
+    std::int64_t lastUpdateTime{-1};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -272,9 +272,9 @@ enum class SelfTradePreventionMode : std::int32_t {
 };
 
 struct FundingRate final : IJson {
-    std::string m_symbol{};
-    double m_fundingRate{};
-    std::int64_t m_fundingTime{};
+    std::string symbol{};
+    double fundingRate{};
+    std::int64_t fundingTime{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -282,7 +282,7 @@ struct FundingRate final : IJson {
 };
 
 struct FundingRates final : IJson {
-    std::vector<FundingRate> m_fundingRates{};
+    std::vector<FundingRate> fundingRates{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -290,9 +290,9 @@ struct FundingRates final : IJson {
 };
 
 struct TickerPrice final : IJson {
-    std::string m_symbol{};
-    double m_price{};
-    std::int64_t m_time{};
+    std::string symbol{};
+    double price{};
+    std::int64_t time{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -300,12 +300,12 @@ struct TickerPrice final : IJson {
 };
 
 struct BookTickerPrice final : IJson {
-    std::string m_symbol{};
-    double m_bidPrice{};
-    double m_askPrice{};
-    double m_bidQty{};
-    double m_askQty{};
-    std::int64_t m_time{};
+    std::string symbol{};
+    double bidPrice{};
+    double askPrice{};
+    double bidQty{};
+    double askQty{};
+    std::int64_t time{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -313,14 +313,14 @@ struct BookTickerPrice final : IJson {
 };
 
 struct MarkPrice final : IJson {
-    std::string m_symbol{};
-    double m_markPrice{};
-    double m_indexPrice{};
-    double m_estimatedSettlePrice{};
-    double m_lastFundingRate{};
-    std::int64_t m_nextFundingTime{};
-    double m_interestRate{};
-    std::int64_t m_time{};
+    std::string symbol{};
+    double markPrice{};
+    double indexPrice{};
+    double estimatedSettlePrice{};
+    double lastFundingRate{};
+    std::int64_t nextFundingTime{};
+    double interestRate{};
+    std::int64_t time{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -328,7 +328,7 @@ struct MarkPrice final : IJson {
 };
 
 struct MarkPrices final : IJson {
-    std::vector<MarkPrice> m_markPrices{};
+    std::vector<MarkPrice> markPrices{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -336,21 +336,21 @@ struct MarkPrices final : IJson {
 };
 
 struct Asset final : IJson {
-    std::string m_asset{};
-    double m_walletBalance{};
-    double m_unrealizedProfit{};
-    double m_marginBalance{};
-    double m_maintMargin{};
-    double m_initialMargin{};
-    double m_positionInitialMargin{};
-    double m_openOrderInitialMargin{};
-    double m_crossWalletBalance{};
-    double m_crossUnPnl{};
-    double m_availableBalance{};
-    double m_maxWithdrawAmount{};
-    bool m_marginAvailable{false};
-    std::int64_t m_updateTime{};
-    double m_autoAssetExchange{};
+    std::string asset{};
+    double walletBalance{};
+    double unrealizedProfit{};
+    double marginBalance{};
+    double maintMargin{};
+    double initialMargin{};
+    double positionInitialMargin{};
+    double openOrderInitialMargin{};
+    double crossWalletBalance{};
+    double crossUnPnl{};
+    double availableBalance{};
+    double maxWithdrawAmount{};
+    bool marginAvailable{false};
+    std::int64_t updateTime{};
+    double autoAssetExchange{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -358,25 +358,25 @@ struct Asset final : IJson {
 };
 
 struct Account final : IJson {
-    int m_feeTier{};
-    bool m_canTrade{false};
-    bool m_canDeposit{false};
-    bool m_canWithdraw{false};
-    std::int64_t m_updateTime{};
-    double m_totalInitialMargin{};
-    double m_totalMaintMargin{};
-    double m_totalWalletBalance{};
-    double m_totalUnrealizedProfit{};
-    double m_totalMarginBalance{};
-    double m_totalPositionInitialMargin{};
-    double m_totalOpenOrderInitialMargin{};
-    double m_totalCrossWalletBalance{};
-    double m_totalCrossUnPnl{};
-    double m_availableBalance{};
-    double m_maxWithdrawAmount{};
-    int m_tradeGroupId = -1;
+    int feeTier{};
+    bool canTrade{false};
+    bool canDeposit{false};
+    bool canWithdraw{false};
+    std::int64_t updateTime{};
+    double totalInitialMargin{};
+    double totalMaintMargin{};
+    double totalWalletBalance{};
+    double totalUnrealizedProfit{};
+    double totalMarginBalance{};
+    double totalPositionInitialMargin{};
+    double totalOpenOrderInitialMargin{};
+    double totalCrossWalletBalance{};
+    double totalCrossUnPnl{};
+    double availableBalance{};
+    double maxWithdrawAmount{};
+    int tradeGroupId = -1;
 
-    std::vector<Asset> m_assets;
+    std::vector<Asset> assets;
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -384,15 +384,15 @@ struct Account final : IJson {
 };
 
 struct AccountBalance final : IJson {
-    std::string m_accountAlias{};
-    std::string m_asset{};
-    double m_balance{};
-    double m_crossWalletBalance{};
-    double m_crossUnPnl{};
-    double m_availableBalance{};
-    double m_maxWithdrawAmount{};
-    bool m_marginAvailable{true};
-    std::int64_t m_updateTime{};
+    std::string accountAlias{};
+    std::string asset{};
+    double balance{};
+    double crossWalletBalance{};
+    double crossUnPnl{};
+    double availableBalance{};
+    double maxWithdrawAmount{};
+    bool marginAvailable{true};
+    std::int64_t updateTime{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -400,54 +400,54 @@ struct AccountBalance final : IJson {
 };
 
 struct Order : IJson {
-    std::string m_symbol{};
-    Side m_side{Side::BUY};
-    PositionSide m_positionSide{PositionSide::BOTH};
-    OrderType m_type{OrderType::LIMIT};
-    TimeInForce m_timeInForce{TimeInForce::GTC};
-    std::int64_t m_orderId{};
+    std::string symbol{};
+    Side side{Side::BUY};
+    PositionSide positionSide{PositionSide::BOTH};
+    OrderType type{OrderType::LIMIT};
+    TimeInForce timeInForce{TimeInForce::GTC};
+    std::int64_t orderId{};
 
     /// Cannot be sent with closePosition=true(Close-All)
-    double m_quantity{};
+    double quantity{};
 
     /// "true" or "false". default "false". Cannot be sent in Hedge Mode; cannot be sent with closePosition=true
-    bool m_reduceOnly{false};
+    bool reduceOnly{false};
 
     /// A unique id among open orders. Automatically generated if not sent. Can only be string following
     /// the rule: ^[\.A-Z\:/a-z0-9_-]{1,36}$
-    std::string m_newClientOrderId{};
+    std::string newClientOrderId{};
 
-    double m_price{};
+    double price{};
 
     /// Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.
-    double m_stopPrice{};
+    double stopPrice{};
 
-    int64_t m_timestamp{};
+    int64_t timestamp{};
 
     /// true, false；Close-All，used with STOP_MARKET or TAKE_PROFIT_MARKET.
-    bool m_closePosition{false};
+    bool closePosition{false};
 
     /// Used with TRAILING_STOP_MARKET orders, default as the latest price(supporting different workingType)
-    double m_activationPrice{};
+    double activationPrice{};
 
     /// Used with TRAILING_STOP_MARKET orders, min 0.1, max 5 where 1 for 1%
-    double m_callbackRate{};
+    double callbackRate{};
 
     /// stopPrice triggered by: "MARK_PRICE", "CONTRACT_PRICE". Default "CONTRACT_PRICE"
-    WorkingType m_workingType{WorkingType::CONTRACT_PRICE};
+    WorkingType workingType{WorkingType::CONTRACT_PRICE};
 
     /// "TRUE" or "FALSE", default "FALSE". Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.
-    bool m_priceProtect{false};
+    bool priceProtect{false};
 
-    OrderRespType m_newOrderRespType{OrderRespType::ACK};
+    OrderRespType newOrderRespType{OrderRespType::ACK};
 
     /// quantityPrecision is not part of Binance API, it serves for formatting only (shitty API design!)
-    int m_quantityPrecision{2};
+    int quantityPrecision{2};
 
     /// pricePrecision is not part of Binance API, it serves for formatting only (shitty API design!)
-    int m_pricePrecision{2};
+    int pricePrecision{2};
 
-    SelfTradePreventionMode m_selfTradePreventionMode{SelfTradePreventionMode::NONE};
+    SelfTradePreventionMode selfTradePreventionMode{SelfTradePreventionMode::NONE};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -455,17 +455,17 @@ struct Order : IJson {
 };
 
 struct OrderResponse final : Order {
-    std::int64_t m_orderId{};
-    std::string m_clientOrderId{};
-    OrderStatus m_orderStatus{OrderStatus::NEW};
-    double m_avgPrice{};
-    double m_origQty{};
-    double m_executedQty{};
-    double m_cumQty{};
-    double m_cumQuote{};
-    OrderType m_origType{OrderType::LIMIT};
-    int m_errCode{};
-    std::string m_errMsg{};
+    std::int64_t orderId{};
+    std::string clientOrderId{};
+    OrderStatus orderStatus{OrderStatus::NEW};
+    double avgPrice{};
+    double origQty{};
+    double executedQty{};
+    double cumQty{};
+    double cumQuote{};
+    OrderType origType{OrderType::LIMIT};
+    int errCode{};
+    std::string errMsg{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -473,7 +473,7 @@ struct OrderResponse final : Order {
 };
 
 struct OrdersResponse final : IJson {
-    std::vector<OrderResponse> m_responses{};
+    std::vector<OrderResponse> responses{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -481,19 +481,19 @@ struct OrdersResponse final : IJson {
 };
 
 struct Position final : IJson {
-    double m_entryPrice{};
-    std::string m_marginType{};
-    bool m_isAutoAddMargin{false};
-    double m_isolatedMargin{};
-    double m_leverage{};
-    double m_liquidationPrice{};
-    double m_markPrice{};
-    double m_maxNotionalValue{};
-    double m_positionAmt{};
-    std::string m_symbol{};
-    double m_unRealizedProfit{};
-    PositionSide m_positionSide{PositionSide::BOTH};
-    std::int64_t m_updateTime{};
+    double entryPrice{};
+    std::string marginType{};
+    bool isAutoAddMargin{false};
+    double isolatedMargin{};
+    double leverage{};
+    double liquidationPrice{};
+    double markPrice{};
+    double maxNotionalValue{};
+    double positionAmt{};
+    std::string symbol{};
+    double unRealizedProfit{};
+    PositionSide positionSide{PositionSide::BOTH};
+    std::int64_t updateTime{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -501,18 +501,18 @@ struct Position final : IJson {
 };
 
 struct Filter final : IJson {
-    SymbolFilter m_filterType{SymbolFilter::PRICE_FILTER};
-    double m_maxPrice{};
-    double m_minPrice{};
-    double m_tickSize{};
-    double m_minQty{};
-    double m_maxQty{};
-    double m_stepSize{};
-    std::int64_t m_limit{};
-    double m_multiplierUp{};
-    double m_multiplierDown{};
-    double m_multiplierDecimal{};
-    double m_notional{};
+    SymbolFilter filterType{SymbolFilter::PRICE_FILTER};
+    double maxPrice{};
+    double minPrice{};
+    double tickSize{};
+    double minQty{};
+    double maxQty{};
+    double stepSize{};
+    std::int64_t limit{};
+    double multiplierUp{};
+    double multiplierDown{};
+    double multiplierDecimal{};
+    double notional{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -520,30 +520,30 @@ struct Filter final : IJson {
 };
 
 struct Symbol final : IJson {
-    std::string m_symbol{};
-    std::string m_pair{};
-    std::string m_contractType{};
-    std::int64_t m_deliveryDate{};
-    std::int64_t m_onboardDate{};
-    ContractStatus m_status{ContractStatus::TRADING};
-    double m_maintMarginPercent{};
-    double m_requiredMarginPercent{};
-    std::string m_baseAsset{};
-    std::string m_quoteAsset{};
-    std::string m_marginAsset{};
-    int m_pricePrecision{};
-    int m_quantityPrecision{};
-    int m_baseAssetPrecision{};
-    int m_quotePrecision{};
-    std::string m_underlyingType{};
-    std::vector<std::string> m_underlyingSubType{};
-    std::int64_t m_settlePlan{};
-    double m_triggerProtect{};
-    std::vector<Filter> m_filters{};
-    std::vector<OrderType> m_orderType{};
-    std::vector<TimeInForce> m_timeInForce{};
-    double m_liquidationFee{};
-    double m_marketTakeBound{};
+    std::string symbol{};
+    std::string pair{};
+    std::string contractType{};
+    std::int64_t deliveryDate{};
+    std::int64_t onboardDate{};
+    ContractStatus status{ContractStatus::TRADING};
+    double maintMarginPercent{};
+    double requiredMarginPercent{};
+    std::string baseAsset{};
+    std::string quoteAsset{};
+    std::string marginAsset{};
+    int pricePrecision{};
+    int quantityPrecision{};
+    int baseAssetPrecision{};
+    int quotePrecision{};
+    std::string underlyingType{};
+    std::vector<std::string> underlyingSubType{};
+    std::int64_t settlePlan{};
+    double triggerProtect{};
+    std::vector<Filter> filters{};
+    std::vector<OrderType> orderType{};
+    std::vector<TimeInForce> timeInForce{};
+    double liquidationFee{};
+    double marketTakeBound{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -551,14 +551,14 @@ struct Symbol final : IJson {
 };
 
 struct Exchange final : IJson {
-    std::vector<RateLimit> m_rateLimits{};
-    std::vector<Asset> m_assets{};
-    std::vector<Symbol> m_symbols{};
-    std::int64_t m_serverTime{};
-    std::string m_timezone{};
+    std::vector<RateLimit> rateLimits{};
+    std::vector<Asset> assets{};
+    std::vector<Symbol> symbols{};
+    std::int64_t serverTime{};
+    std::string timezone{};
 
     /// lastUpdateTime is not part of Binance API, it serves for keeping Exchange data up to date
-    std::int64_t m_lastUpdateTime{-1};
+    std::int64_t lastUpdateTime{-1};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -566,8 +566,8 @@ struct Exchange final : IJson {
 };
 
 struct DownloadId final : IJson {
-    std::int64_t m_avgCostTimestampOfLast30d{};
-    std::string m_downloadId{};
+    std::int64_t avgCostTimestampOfLast30d{};
+    std::string downloadId{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -575,14 +575,14 @@ struct DownloadId final : IJson {
 };
 
 struct Income final : IJson {
-    std::string m_symbol{};
-    IncomeType m_incomeType{IncomeType::TRANSFER};
-    double m_income{};
-    std::string m_asset{};
-    std::string m_info{};
-    std::int64_t m_time{};
-    std::int64_t m_tranId{};
-    std::string m_tradeId{};
+    std::string symbol{};
+    IncomeType incomeType{IncomeType::TRANSFER};
+    double income{};
+    std::string asset{};
+    std::string info{};
+    std::int64_t time{};
+    std::int64_t tranId{};
+    std::string tradeId{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -590,7 +590,7 @@ struct Income final : IJson {
 };
 
 struct Incomes final : IJson {
-    std::vector<Income> m_incomes{};
+    std::vector<Income> incomes{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -598,21 +598,21 @@ struct Incomes final : IJson {
 };
 
 struct PositionRisk final : IJson {
-    std::string m_symbol{};
-    double m_entryPrice{};
-    MarginType m_marginType{MarginType::ISOLATED};
-    bool m_isAutoAddMargin{false};
-    double m_isolatedMargin{};
-    int m_leverage{1};
-    double m_liquidationPrice{};
-    double m_markPrice{};
-    double m_maxNotionalValue{};
-    double m_positionAmt{};
-    double m_notional{};
-    double m_isolatedWallet{};
-    double m_unRealizedProfit{};
-    PositionSide m_positionSide{PositionSide::BOTH};
-    std::int64_t m_updateTime{};
+    std::string symbol{};
+    double entryPrice{};
+    MarginType marginType{MarginType::ISOLATED};
+    bool isAutoAddMargin{false};
+    double isolatedMargin{};
+    int leverage{1};
+    double liquidationPrice{};
+    double markPrice{};
+    double maxNotionalValue{};
+    double positionAmt{};
+    double notional{};
+    double isolatedWallet{};
+    double unRealizedProfit{};
+    PositionSide positionSide{PositionSide::BOTH};
+    std::int64_t updateTime{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -620,9 +620,9 @@ struct PositionRisk final : IJson {
 };
 
 struct OpenInterest final : IJson {
-    std::string m_symbol{};
-    double m_openInterest{};
-    std::int64_t m_time{};
+    std::string symbol{};
+    double openInterest{};
+    std::int64_t time{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -630,11 +630,11 @@ struct OpenInterest final : IJson {
 };
 
 struct LongShortRatio final : IJson {
-    std::string m_symbol{};
-    double m_longShortRatio{};
-    double m_longAccount{};
-    double m_shortAccount{};
-    std::int64_t m_timestamp{};
+    std::string symbol{};
+    double longShortRatio{};
+    double longAccount{};
+    double shortAccount{};
+    std::int64_t timestamp{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -642,10 +642,10 @@ struct LongShortRatio final : IJson {
 };
 
 struct OpenInterestStatistics final : IJson {
-    std::string m_symbol{};
-    double m_sumOpenInterest{};
-    double m_sumOpenInterestValue{};
-    std::int64_t m_timestamp{};
+    std::string symbol{};
+    double sumOpenInterest{};
+    double sumOpenInterestValue{};
+    std::int64_t timestamp{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
@@ -653,10 +653,10 @@ struct OpenInterestStatistics final : IJson {
 };
 
 struct BuySellVolume final : IJson {
-    double m_buySellRatio{};
-    double m_buyVol{};
-    double m_sellVol{};
-    std::int64_t m_timestamp{};
+    double buySellRatio{};
+    double buyVol{};
+    double sellVol{};
+    std::int64_t timestamp{};
 
     [[nodiscard]] nlohmann::json toJson() const override;
 
