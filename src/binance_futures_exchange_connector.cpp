@@ -16,11 +16,11 @@ struct BinanceFuturesExchangeConnector::P {
     std::shared_ptr<binance::futures::RESTClient> restClient{};
     std::unique_ptr<binance::futures::WSStreamManager> streamManager{};
 
-    static binance::Side generalOrderSideToBinanceOrderSide(const OrderSide& side) {
+    static binance::Side generalOrderSideToBinanceOrderSide(const Side& side) {
         switch (side) {
-        case OrderSide::Buy:
+        case Side::Buy:
             return binance::Side::BUY;
-        case OrderSide::Sell:
+        case Side::Sell:
             return binance::Side::SELL;
         default:
             return binance::Side::BUY;
@@ -201,4 +201,16 @@ std::vector<FundingRate> BinanceFuturesExchangeConnector::getFundingRates() cons
 std::int64_t BinanceFuturesExchangeConnector::getServerTime() const {
     return m_p->restClient->getServerTime();
 }
+
+std::vector<Position> BinanceFuturesExchangeConnector::getPositionInfo(const std::string& symbol) const {
+    throw std::runtime_error("Unimplemented: BinanceFuturesExchangeConnector::getPositionInfo");
 }
+
+std::vector<FundingRate> BinanceFuturesExchangeConnector::getHistoricalFundingRates(const std::string& symbol, std::int64_t startTime, std::int64_t endTime) const {
+    throw std::runtime_error("Unimplemented: BinanceFuturesExchangeConnector::getHistoricalFundingRates");
+}
+
+std::vector<Candle> BinanceFuturesExchangeConnector::getHistoricalCandles(const std::string& symbol, CandleInterval interval, std::int64_t startTime, std::int64_t endTime) const {
+    throw std::runtime_error("Unimplemented: BinanceFuturesExchangeConnector::getHistoricalCandles");
+}
+} // namespace vk
