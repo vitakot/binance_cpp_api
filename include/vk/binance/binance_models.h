@@ -93,7 +93,14 @@ enum class ContractStatus : std::int32_t {
     DELIVERED,
     PRE_SETTLE,
     SETTLING,
-    CLOSE
+    CLOSE,
+    // Spot-specific statuses
+    PRE_TRADING,
+    POST_TRADING,
+    END_OF_DAY,
+    HALT,
+    AUCTION_MATCH,
+    BREAK
 };
 
 struct RateLimit final : IJson {
