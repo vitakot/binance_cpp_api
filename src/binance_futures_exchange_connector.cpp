@@ -137,8 +137,8 @@ TickerPrice BinanceFuturesExchangeConnector::getTickerPrice(const std::string& s
     return retVal;
 }
 
-std::vector<Ticker> BinanceFuturesExchangeConnector::getTickerInfo(const std::string& symbol) const {
-    std::vector<Ticker> retVal;
+std::vector<Symbol> BinanceFuturesExchangeConnector::getSymbolInfo(const std::string& symbol) const {
+    std::vector<Symbol> retVal;
     std::vector<binance::futures::Symbol> symbolsToSearch;
     const auto exchangeInfo = m_p->restClient->getExchangeInfo();
 
@@ -154,7 +154,7 @@ std::vector<Ticker> BinanceFuturesExchangeConnector::getTickerInfo(const std::st
 
     for (const auto& el : symbolsToSearch) {
         if ((!symbol.empty() && el.symbol == symbol) || symbol.empty()) {
-            Ticker ticker;
+            Symbol ticker;
             ticker.marketCategory = MarketCategory::Futures;
             ticker.symbol = el.symbol;
             ticker.baseAsset = el.baseAsset;
