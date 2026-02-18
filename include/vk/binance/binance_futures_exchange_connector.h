@@ -37,7 +37,7 @@ public:
 
     [[nodiscard]] TickerPrice getTickerPrice(const std::string &symbol) const override;
 
-    [[nodiscard]] std::vector<Ticker> getTickerInfo(const std::string& symbol) const override;
+    [[nodiscard]] std::vector<Symbol> getSymbolInfo(const std::string& symbol) const override;
 
     [[nodiscard]] Balance getAccountBalance(const std::string &currency) const override;
 
