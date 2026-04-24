@@ -1,9 +1,9 @@
-#include "vk/binance/binance_futures_rest_client.h"
-#include "vk/binance/binance.h"
-#include "vk/utils/json_utils.h"
-#include "vk/utils/utils.h"
-#include "vk/binance/binance_futures_ws_client.h"
-#include "vk/binance/binance_ws_stream_manager.h"
+#include "stonky/binance/binance_futures_rest_client.h"
+#include "stonky/binance/binance.h"
+#include "stonky/utils/json_utils.h"
+#include "stonky/utils/utils.h"
+#include "stonky/binance/binance_futures_ws_client.h"
+#include "stonky/binance/binance_ws_stream_manager.h"
 #include <memory>
 #include <filesystem>
 #include <iostream>
@@ -12,31 +12,31 @@
 #include <spdlog/spdlog.h>
 #include <future>
 
-#include "vk/interface/exchange_types.h"
+#include "stonky/interface/exchange_types.h"
 
-using namespace vk::binance;
+using namespace stonky::binance;
 using namespace std::chrono_literals;
 
 constexpr int HISTORY_LENGTH_IN_MS = 86400000; // 1 day
 
-void logFunction(const vk::LogSeverity severity, const std::string &errmsg) {
+void logFunction(const stonky::LogSeverity severity, const std::string &errmsg) {
     switch (severity) {
-        case vk::LogSeverity::Info:
+        case stonky::LogSeverity::Info:
             spdlog::info(errmsg);
             break;
-        case vk::LogSeverity::Warning:
+        case stonky::LogSeverity::Warning:
             spdlog::warn(errmsg);
             break;
-        case vk::LogSeverity::Critical:
+        case stonky::LogSeverity::Critical:
             spdlog::critical(errmsg);
             break;
-        case vk::LogSeverity::Error:
+        case stonky::LogSeverity::Error:
             spdlog::error(errmsg);
             break;
-        case vk::LogSeverity::Debug:
+        case stonky::LogSeverity::Debug:
             spdlog::debug(errmsg);
             break;
-        case vk::LogSeverity::Trace:
+        case stonky::LogSeverity::Trace:
             spdlog::trace(errmsg);
             break;
     }
@@ -57,8 +57,8 @@ std::pair<std::string, std::string> readCredentials() {
         std::string subAccountName;
 
         nlohmann::json json = nlohmann::json::parse(ifs);
-        vk::readValue<std::string>(json, "ApiKey", apiKey);
-        vk::readValue<std::string>(json, "ApiSecret", apiSecret);
+        stonky::readValue<std::string>(json, "ApiKey", apiKey);
+        stonky::readValue<std::string>(json, "ApiSecret", apiSecret);
 
         std::pair retVal(apiKey, apiSecret);
         return retVal;
@@ -129,15 +129,15 @@ void testBinance() {
             if (auto ret = wsManager->readEventCandlestick("BTCUSDT", CandleInterval::_1m, true)) {
                 std::stringstream ss;
 
-                std::string candleEventStartTime = vk::getDateTimeStringFromTimeStamp(ret->k.t,
+                std::string candleEventStartTime = stonky::getDateTimeStringFromTimeStamp(ret->k.t,
                     "%Y-%m-%dT%H:%M:%S", true);
-                std::string candleEventStopTime = vk::getDateTimeStringFromTimeStamp(ret->k.T,
+                std::string candleEventStopTime = stonky::getDateTimeStringFromTimeStamp(ret->k.T,
                     "%Y-%m-%dT%H:%M:%S", true);
 
                 ss << "Previous Candle start: " << candleEventStartTime << ", candle end: " << candleEventStopTime;
 
 
-                logFunction(vk::LogSeverity::Info, ss.str());
+                logFunction(stonky::LogSeverity::Info, ss.str());
             } else {
                 std::cout << "nasrat" << std::endl;
             }
@@ -156,7 +156,7 @@ std::vector<std::string> loadAssets(const std::string &path) {
 
         while (std::getline(inFile, row)) {
             if (!row.empty()) {
-                if (auto records = vk::splitString(row, ','); !records.empty()) {
+                if (auto records = stonky::splitString(row, ','); !records.empty()) {
                     retVal.push_back(records[0]);
                 }
             }
@@ -184,7 +184,7 @@ void testRestCandlesDownload() {
             if (auto ret = wsManager->readEventTickPrice("BTCUSDT", true)) {
                 std::stringstream ss;
                 ss << "BTCUSDT Book ticker received: " << ret.value().toJson().dump();
-                logFunction(vk::LogSeverity::Info, ss.str());
+                logFunction(stonky::LogSeverity::Info, ss.str());
             } else {
                 std::cout << "BTCUSDT Error" << std::endl;
             }
@@ -192,7 +192,7 @@ void testRestCandlesDownload() {
             if (auto ret = wsManager->readEventTickPrice("ETHUSDT", true)) {
                 std::stringstream ss;
                 ss << "ETHUSDT Book ticker received: " << ret.value().toJson().dump();
-                logFunction(vk::LogSeverity::Info, ss.str());
+                logFunction(stonky::LogSeverity::Info, ss.str());
             } else {
                 std::cout << "ETHUSDT Error" << std::endl;
             }
@@ -209,7 +209,7 @@ void testRestCandlesDownload() {
     auto restClient = std::make_shared<futures::RESTClient>(fst, snd);
 
     for (const auto rs = restClient->getPositionRisk("BTCUSDT"); const auto &risk: rs) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Position risk: {}", risk.toJson().dump()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Position risk: {}", risk.toJson().dump()));
     }
 
     const std::shared_ptr wsManager = std::make_unique<
@@ -227,7 +227,7 @@ void testRestCandlesDownload() {
             if (auto ret = wsManager->readEventTickPrice("BTCUSDT", true)) {
                 std::stringstream ss;
                 ss << "BTCUSDT Book ticker received: " << ret.value().toJson().dump();
-                logFunction(vk::LogSeverity::Info, ss.str());
+                logFunction(stonky::LogSeverity::Info, ss.str());
             } else {
                 std::cout << "BTCUSDT nasrat" << std::endl;
             }
@@ -243,7 +243,7 @@ void testRisk() {
     const auto restClient = std::make_shared<futures::RESTClient>(fst, snd);
 
     for (const auto rs = restClient->getPositionRisk("BTCUSDT"); const auto &risk: rs) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Position risk: {}", risk.toJson().dump()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Position risk: {}", risk.toJson().dump()));
     }
 }
 
@@ -256,7 +256,7 @@ void testCandlesLimits() {
 
     const auto prd = restClient->getHistoricalPrices("BTCUSDT", CandleInterval::_1m, oldestBNBDate,
                                                      nowTimestamp, 1500);
-    logFunction(vk::LogSeverity::Info, fmt::format("Done, candles num: {}", prd.size()));
+    logFunction(stonky::LogSeverity::Info, fmt::format("Done, candles num: {}", prd.size()));
 }
 
 [[noreturn]] void measureRestResponses() {
@@ -277,7 +277,7 @@ void testCandlesLimits() {
         auto t2 = high_resolution_clock::now();
 
         duration<double, std::milli> ms_double = t2 - t1;
-        logFunction(vk::LogSeverity::Info, fmt::format("Get Position risk request time: {} ms", ms_double.count()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Get Position risk request time: {} ms", ms_double.count()));
         overallTime += ms_double.count();
 
         t1 = high_resolution_clock::now();
@@ -285,7 +285,7 @@ void testCandlesLimits() {
         t2 = high_resolution_clock::now();
 
         ms_double = t2 - t1;
-        logFunction(vk::LogSeverity::Info, fmt::format("Get Exchange request time: {} ms", ms_double.count()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Get Exchange request time: {} ms", ms_double.count()));
         overallTime += ms_double.count();
 
         t1 = high_resolution_clock::now();
@@ -293,12 +293,12 @@ void testCandlesLimits() {
         t2 = high_resolution_clock::now();
 
         ms_double = t2 - t1;
-        logFunction(vk::LogSeverity::Info, fmt::format("Get Account info request time: {} ms\n", ms_double.count()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Get Account info request time: {} ms\n", ms_double.count()));
         overallTime += ms_double.count();
         numPass++;
 
         double timePerResponse = overallTime / (numPass * 3);
-        logFunction(vk::LogSeverity::Info, fmt::format("Average time per response: {} ms\n", timePerResponse));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Average time per response: {} ms\n", timePerResponse));
 
         std::this_thread::sleep_for(2s);
     }
@@ -311,7 +311,7 @@ void setLeverage() {
     try {
         auto resp = restClient->changeInitialLeverage("ETHUSDT", 5);
     } catch (std::exception &e) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
     }
 }
 
@@ -336,7 +336,7 @@ void testFR() {
         const auto fr = restClient->getLastFundingRate("APTUSDT");
 
     } catch (std::exception &e) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
     }
 }
 
@@ -345,7 +345,7 @@ void testBookDepthStream() {
     wsClient->setLoggerCallback(&logFunction);
 
     wsClient->partialBookDepthStream("BTCUSDT", 5, [&](const nlohmann::json &msg) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Msg: {}", msg.dump()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Msg: {}", msg.dump()));
     });
 
     wsClient->run();
@@ -367,7 +367,7 @@ void testBuySellVolume() {
             std::cout << data[i].timestamp << std::endl;
         }
     } catch (std::exception &e) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
     }
 }
 
@@ -377,20 +377,20 @@ void testAccountBalance() {
         const auto restClient = std::make_shared<futures::RESTClient>(fst, snd);
 
         for (auto balances = restClient->getAccountBalances(); const auto &balance: balances) {
-            logFunction(vk::LogSeverity::Info, fmt::format("Balance: {}", balance.balance));
+            logFunction(stonky::LogSeverity::Info, fmt::format("Balance: {}", balance.balance));
         }
     } catch (std::exception &e) {
-        logFunction(vk::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
+        logFunction(stonky::LogSeverity::Info, fmt::format("Exception: {}", e.what()));
     }
 }
 
 void testFRMulti() {
-    std::vector<vk::FundingRate> retVal;
+    std::vector<stonky::FundingRate> retVal;
 
     const auto restClient = std::make_shared<futures::RESTClient>("", "");
 
     for (const auto& rate : restClient->getMarkPrices()) {
-        vk::FundingRate fr;
+        stonky::FundingRate fr;
         fr.symbol = rate.symbol;
         fr.fundingRate = rate.lastFundingRate;
         fr.fundingTime = rate.nextFundingTime;

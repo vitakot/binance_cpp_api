@@ -6,15 +6,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_FUTURES_WS_STREAM_MANAGER_H
-#define INCLUDE_VK_BINANCE_FUTURES_WS_STREAM_MANAGER_H
+#ifndef INCLUDE_STONKY_BINANCE_FUTURES_WS_STREAM_MANAGER_H
+#define INCLUDE_STONKY_BINANCE_FUTURES_WS_STREAM_MANAGER_H
 
 #include <vk/utils/log_utils.h>
 #include "binance_event_models.h"
 #include "binance_models.h"
 #include <optional>
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 class RESTClient;
 
 class WSStreamManager {
@@ -83,4 +83,4 @@ public:
 };
 }
 
-#endif //INCLUDE_VK_BINANCE_FUTURES_WS_STREAM_MANAGER_H
+#endif //INCLUDE_STONKY_BINANCE_FUTURES_WS_STREAM_MANAGER_H

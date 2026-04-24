@@ -6,9 +6,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include "vk/binance/binance.h"
+#include "stonky/binance/binance.h"
 
-namespace vk::binance {
+namespace stonky::binance {
 int64_t Binance::numberOfMsForCandleInterval(const CandleInterval candleInterval) {
     switch (candleInterval) {
         case CandleInterval::_1m:

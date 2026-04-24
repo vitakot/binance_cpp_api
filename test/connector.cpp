@@ -1,6 +1,6 @@
 #include <vk/binance/binance_futures_exchange_connector.h>
 
-using namespace vk;
+using namespace stonky;
 
 void testTickerInfo() {
     const auto connector = std::make_unique<BinanceFuturesExchangeConnector>();

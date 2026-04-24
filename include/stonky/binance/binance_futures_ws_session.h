@@ -6,16 +6,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_WS_SESSION_H
-#define INCLUDE_VK_BINANCE_WS_SESSION_H
+#ifndef INCLUDE_STONKY_BINANCE_WS_SESSION_H
+#define INCLUDE_STONKY_BINANCE_WS_SESSION_H
 
-#include "vk/utils/log_utils.h"
+#include "stonky/utils/log_utils.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl/context.hpp>
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 using onJSONMessage = std::function<void(const nlohmann::json &msg)>;
 
 class WebSocketSession final : public std::enable_shared_from_this<WebSocketSession> {
@@ -33,5 +33,5 @@ public:
 
     [[nodiscard]] std::string target() const;
 };
-} // namespace vk::binance::futures
-#endif // INCLUDE_VK_BINANCE_WS_SESSION_H
+} // namespace stonky::binance::futures
+#endif // INCLUDE_STONKY_BINANCE_WS_SESSION_H

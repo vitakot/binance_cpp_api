@@ -6,15 +6,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_EVENT_MODELS_H
-#define INCLUDE_VK_BINANCE_EVENT_MODELS_H
+#ifndef INCLUDE_STONKY_BINANCE_EVENT_MODELS_H
+#define INCLUDE_STONKY_BINANCE_EVENT_MODELS_H
 
-#include "vk/interface/i_json.h"
+#include "stonky/interface/i_json.h"
 #include "binance_models.h"
 #include <nlohmann/json.hpp>
 #include <variant>
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 /**
  * WebSocket Events. Some are Upper Case, some not - Binance mess
  */
@@ -161,4 +161,4 @@ struct EventCandlestick final : Event {
     void fromJson(const nlohmann::json &json) override;
 };
 }
-#endif //INCLUDE_VK_BINANCE_EVENT_MODELS_H
+#endif //INCLUDE_STONKY_BINANCE_EVENT_MODELS_H

@@ -9,10 +9,10 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #ifndef INCLUDE_CK_BINANCE_MODELS_H
 #define INCLUDE_CK_BINANCE_MODELS_H
 
-#include "vk/interface/i_json.h"
+#include "stonky/interface/i_json.h"
 #include <nlohmann/json.hpp>
 
-namespace vk::binance {
+namespace stonky::binance {
 enum class CandleInterval : std::int32_t {
     _1m,
     _3m,
@@ -151,7 +151,7 @@ struct CandlesResponse final : IJson {
 };
 }
 
-namespace vk::binance::spot {
+namespace stonky::binance::spot {
 
 struct Symbol final : IJson {
     std::string symbol{};
@@ -177,7 +177,7 @@ struct Exchange final : IJson {
 };
 }
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 enum class OrderStatus : std::int32_t {
     NEW,
     PARTIALLY_FILLED,

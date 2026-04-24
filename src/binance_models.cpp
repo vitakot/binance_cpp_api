@@ -6,11 +6,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include "vk/binance/binance_models.h"
-#include "vk/utils/utils.h"
-#include "vk/utils/json_utils.h"
+#include "stonky/binance/binance_models.h"
+#include "stonky/utils/utils.h"
+#include "stonky/utils/json_utils.h"
 
-namespace vk::binance {
+namespace stonky::binance {
 nlohmann::json Candle::toJson() const {
     nlohmann::json json;
     json.push_back(openTime);
@@ -78,7 +78,7 @@ void RateLimit::fromJson(const nlohmann::json &json) {
 }
 }
 
-namespace vk::binance::spot {
+namespace stonky::binance::spot {
 nlohmann::json Symbol::toJson() const {
     throw std::runtime_error("Unimplemented: Symbol::toJson()");
 }
@@ -112,7 +112,7 @@ void Exchange::fromJson(const nlohmann::json &json) {
 }
 }
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 
 nlohmann::json FundingRate::toJson() const {
     throw std::runtime_error("Unimplemented: FundingRate::toJson()");

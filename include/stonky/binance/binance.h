@@ -6,12 +6,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_API_BINANCE_H
-#define INCLUDE_VK_BINANCE_API_BINANCE_H
+#ifndef INCLUDE_STONKY_BINANCE_API_BINANCE_H
+#define INCLUDE_STONKY_BINANCE_API_BINANCE_H
 
 #include "binance_models.h"
 
-namespace vk::binance {
+namespace stonky::binance {
 class Binance {
 public:
     /**
@@ -30,4 +30,4 @@ public:
     static int64_t numberOfMsForCandleInterval(CandleInterval candleInterval);
 };
 }
-#endif //INCLUDE_VK_BINANCE_API_BINANCE_H
+#endif //INCLUDE_STONKY_BINANCE_API_BINANCE_H

@@ -6,14 +6,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include "vk/binance/binance_http_session.h"
-#include "vk/utils/utils.h"
+#include "stonky/binance/binance_http_session.h"
+#include "stonky/utils/utils.h"
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/version.hpp>
 #include <spdlog/spdlog.h>
 #include <openssl/hmac.h>
 
-namespace vk::binance {
+namespace stonky::binance {
 namespace ssl = boost::asio::ssl;
 using tcp = net::ip::tcp;
 

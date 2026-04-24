@@ -7,16 +7,16 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
 #include <vk/binance/binance_futures_rest_client.h>
-#include "vk/binance/binance_ws_stream_manager.h"
-#include "vk/binance/binance_futures_ws_client.h"
+#include "stonky/binance/binance_ws_stream_manager.h"
+#include "stonky/binance/binance_futures_ws_client.h"
 #include <mutex>
 #include <thread>
-#include "vk/utils/magic_enum_wrapper.hpp"
+#include "stonky/utils/magic_enum_wrapper.hpp"
 
 
 using namespace std::chrono_literals;
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 struct WSStreamManager::P {
     std::unique_ptr<WebSocketClient> wsClient;
     int timeout{5};

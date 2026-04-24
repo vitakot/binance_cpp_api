@@ -6,11 +6,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include "vk/binance/binance_event_models.h"
-#include "vk/utils/utils.h"
-#include "vk/utils/json_utils.h"
+#include "stonky/binance/binance_event_models.h"
+#include "stonky/utils/utils.h"
+#include "stonky/utils/json_utils.h"
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 nlohmann::json Event::toJson() const {
     nlohmann::json json;
     json["e"] = e;

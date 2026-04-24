@@ -14,7 +14,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include "binance_futures_ws_session.h"
 #include <string>
 
-namespace vk::binance::futures {
+namespace stonky::binance::futures {
 class WebSocketClient {
     struct P;
     std::unique_ptr<P> m_p{};

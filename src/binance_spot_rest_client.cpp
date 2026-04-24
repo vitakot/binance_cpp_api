@@ -6,15 +6,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include "vk/binance/binance_spot_rest_client.h"
-#include "vk/binance/binance_http_session.h"
-#include "vk/utils/json_utils.h"
-#include "vk/utils/utils.h"
+#include "stonky/binance/binance_spot_rest_client.h"
+#include "stonky/binance/binance_http_session.h"
+#include "stonky/utils/json_utils.h"
+#include "stonky/utils/utils.h"
 #include <mutex>
 #include <future>
 #include <spdlog/spdlog.h>
 
-namespace vk::binance::spot {
+namespace stonky::binance::spot {
 static constexpr std::int64_t EXCHANGE_DATA_MAX_AGE_S = 3600; /// 1 hour
 
 enum class PrecisionType : int {

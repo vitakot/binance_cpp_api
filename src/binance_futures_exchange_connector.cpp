@@ -7,11 +7,11 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
 #include <vk/binance/binance_futures_exchange_connector.h>
-#include "vk/binance/binance_futures_rest_client.h"
-#include "vk/binance/binance_futures_ws_client.h"
-#include "vk/binance/binance_ws_stream_manager.h"
+#include "stonky/binance/binance_futures_rest_client.h"
+#include "stonky/binance/binance_futures_ws_client.h"
+#include "stonky/binance/binance_ws_stream_manager.h"
 
-namespace vk {
+namespace stonky {
 struct BinanceFuturesExchangeConnector::P {
     std::shared_ptr<binance::futures::RESTClient> restClient{};
     std::unique_ptr<binance::futures::WSStreamManager> streamManager{};
@@ -213,4 +213,4 @@ std::vector<FundingRate> BinanceFuturesExchangeConnector::getHistoricalFundingRa
 std::vector<Candle> BinanceFuturesExchangeConnector::getHistoricalCandles(const std::string& symbol, CandleInterval interval, std::int64_t startTime, std::int64_t endTime) const {
     throw std::runtime_error("Unimplemented: BinanceFuturesExchangeConnector::getHistoricalCandles");
 }
-} // namespace vk
+} // namespace stonky

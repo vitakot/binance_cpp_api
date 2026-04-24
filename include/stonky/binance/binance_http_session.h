@@ -6,14 +6,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_HTTP_SESSION_H
-#define INCLUDE_VK_BINANCE_HTTP_SESSION_H
+#ifndef INCLUDE_STONKY_BINANCE_HTTP_SESSION_H
+#define INCLUDE_STONKY_BINANCE_HTTP_SESSION_H
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <string>
 
-namespace vk::binance {
+namespace stonky::binance {
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
@@ -46,4 +46,4 @@ public:
     [[nodiscard]] std::int32_t getUsedWeight() const;
 };
 }
-#endif //INCLUDE_VK_BINANCE_HTTP_SESSION_H
+#endif //INCLUDE_STONKY_BINANCE_HTTP_SESSION_H

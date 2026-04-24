@@ -6,14 +6,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#ifndef INCLUDE_VK_BINANCE_SPOT_REST_CLIENT_H
-#define INCLUDE_VK_BINANCE_SPOT_REST_CLIENT_H
+#ifndef INCLUDE_STONKY_BINANCE_SPOT_REST_CLIENT_H
+#define INCLUDE_STONKY_BINANCE_SPOT_REST_CLIENT_H
 
 #include <string>
 #include <memory>
 #include "binance_models.h"
 
-namespace vk::binance::spot {
+namespace stonky::binance::spot {
 class RESTClient {
     struct P;
     std::unique_ptr<P> m_p{};
@@ -81,4 +81,4 @@ public:
                         std::int64_t endTime, std::int32_t limit = -1) const;
 };
 }
-#endif //INCLUDE_VK_BINANCE_SPOT_REST_CLIENT_H
+#endif //INCLUDE_STONKY_BINANCE_SPOT_REST_CLIENT_H
