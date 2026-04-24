@@ -26,16 +26,16 @@ if (NOT TARGET vk_common)
 endif ()
 
 set(HEADERS
-        include/vk/binance/binance_futures_rest_client.h
-        include/vk/binance/binance_spot_rest_client.h
-        include/vk/binance/binance_futures_ws_client.h
-        include/vk/binance/binance_models.h
-        include/vk/binance/binance_event_models.h
-        include/vk/binance/binance_http_session.h
-        include/vk/binance/binance_futures_ws_session.h
-        include/vk/binance/binance_ws_stream_manager.h
-        include/vk/binance/binance.h
-        include/vk/binance/binance_futures_exchange_connector.h)
+        include/stonky/binance/binance_futures_rest_client.h
+        include/stonky/binance/binance_spot_rest_client.h
+        include/stonky/binance/binance_futures_ws_client.h
+        include/stonky/binance/binance_models.h
+        include/stonky/binance/binance_event_models.h
+        include/stonky/binance/binance_http_session.h
+        include/stonky/binance/binance_futures_ws_session.h
+        include/stonky/binance/binance_ws_stream_manager.h
+        include/stonky/binance/binance.h
+        include/stonky/binance/binance_futures_exchange_connector.h)
 
 set(SOURCES
         src/binance_models.cpp
