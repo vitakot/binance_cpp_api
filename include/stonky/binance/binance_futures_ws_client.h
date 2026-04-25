@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #ifndef BINANCE_FUTURES_WS_CLIENT_H
 #define BINANCE_FUTURES_WS_CLIENT_H
 
-#include <vk/utils/log_utils.h>
+#include <stonky/utils/log_utils.h>
 #include "binance_models.h"
 #include "binance_futures_ws_session.h"
 #include <string>

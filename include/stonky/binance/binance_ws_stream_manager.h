@@ -9,7 +9,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #ifndef INCLUDE_STONKY_BINANCE_FUTURES_WS_STREAM_MANAGER_H
 #define INCLUDE_STONKY_BINANCE_FUTURES_WS_STREAM_MANAGER_H
 
-#include <vk/utils/log_utils.h>
+#include <stonky/utils/log_utils.h>
 #include "binance_event_models.h"
 #include "binance_models.h"
 #include <optional>

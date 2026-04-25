@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
-#include <vk/binance/binance_futures_exchange_connector.h>
+#include <stonky/binance/binance_futures_exchange_connector.h>
 #include "stonky/binance/binance_futures_rest_client.h"
 #include "stonky/binance/binance_futures_ws_client.h"
 #include "stonky/binance/binance_ws_stream_manager.h"
