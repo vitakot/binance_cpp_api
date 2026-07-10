@@ -53,10 +53,12 @@ if (MODULE_MANAGER)
     add_library(binance_api SHARED ${SOURCES} ${HEADERS})
 else ()
     add_library(binance_api STATIC ${SOURCES} ${HEADERS})
+endif ()
 
-    add_executable(test test/main.cpp)
-    target_link_libraries(test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
-
+option(ENABLE_TESTS "Build binance_api test executables" OFF)
+if (ENABLE_TESTS)
+    add_executable(binance_test test/main.cpp)
+    target_link_libraries(binance_test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
 endif ()
 
 target_link_libraries(binance_api PRIVATE spdlog::spdlog_header_only OpenSSL::Crypto OpenSSL::SSL stonky_common nlohmann_json::nlohmann_json)
