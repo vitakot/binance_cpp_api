@@ -11,6 +11,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 
 #include <string>
 #include <memory>
+#include <optional>
 #include "binance_models.h"
 
 namespace stonky::binance::futures {
@@ -193,6 +194,15 @@ public:
      * @throws nlohmann::json::exception, std::exception
      */
     [[nodiscard]] Exchange getExchangeInfo(bool force = false) const;
+
+    /**
+     * Get info of a single symbol. Unlike getExchangeInfo() this does not copy the whole exchange structure, use it
+     * whenever only one symbol is of interest.
+     * @param symbol e.g. BTCUSDT
+     * @return filled Symbol structure or bad option when the symbol is not listed
+     * @throws nlohmann::json::exception, std::exception
+     */
+    [[nodiscard]] std::optional<Symbol> getSymbolInfo(const std::string &symbol) const;
 
     /**
      * Update Exchange info

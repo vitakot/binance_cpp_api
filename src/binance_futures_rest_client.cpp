@@ -42,6 +42,30 @@ public:
         m_exchange = exchange;
     }
 
+    /// Lightweight accessors - the whole Exchange structure holds several hundred symbols, copying it just to read
+    /// a single value is needlessly expensive on the hot path (BrokerAsset is called for every asset on every tick)
+    [[nodiscard]] std::int64_t getExchangeLastUpdateTime() const {
+        std::lock_guard lk(m_locker);
+        return m_exchange.lastUpdateTime;
+    }
+
+    [[nodiscard]] bool isExchangeEmpty() const {
+        std::lock_guard lk(m_locker);
+        return m_exchange.symbols.empty();
+    }
+
+    [[nodiscard]] std::optional<Symbol> findSymbol(const std::string &symbol) const {
+        std::lock_guard lk(m_locker);
+
+        for (const auto &symbolEl: m_exchange.symbols) {
+            if (symbolEl.symbol == symbol) {
+                return symbolEl;
+            }
+        }
+
+        return {};
+    }
+
     [[nodiscard]] std::vector<Candle>
     getHistoricalPrices(const std::string &symbol, CandleInterval interval, std::int64_t startTime,
                         std::int64_t endTime, std::int32_t limit) const;
@@ -51,23 +75,19 @@ public:
                     int limit) const;
 
     int findPrecisionForSymbol(const PrecisionType &type, const std::string &symbol) const {
-        if (getExchange().lastUpdateTime < 0 || std::time(nullptr) - getExchange().lastUpdateTime >
-            EXCHANGE_DATA_MAX_AGE_S) {
-            this->parent->updateExchangeInfo(true);
-        }
+        this->parent->updateExchangeInfo();
 
-        for (const auto &symbolEl: getExchange().symbols) {
-            if (symbolEl.symbol == symbol) {
-                switch (type) {
-                    case PrecisionType::Quantity:
-                        return symbolEl.quantityPrecision;
-                    case PrecisionType::Price:
-                        return symbolEl.pricePrecision;
-                    case PrecisionType::Quote:
-                        return symbolEl.quotePrecision;
-                }
+        if (const auto symbolEl = findSymbol(symbol)) {
+            switch (type) {
+                case PrecisionType::Quantity:
+                    return symbolEl->quantityPrecision;
+                case PrecisionType::Price:
+                    return symbolEl->pricePrecision;
+                case PrecisionType::Quote:
+                    return symbolEl->quotePrecision;
             }
         }
+
         return 1;
     }
 
@@ -93,13 +113,25 @@ public:
 
 http::response<http::string_body> checkResponse(const http::response<http::string_body> &response) {
     if (response.result() != http::status::ok) {
-        ErrorResponse errorResponse;
-        errorResponse.fromJson(nlohmann::json::parse(response.body()));
+        std::string msg = std::string("Bad HTTP response: ") + std::to_string(response.result_int());
 
-        const std::string msg = std::string("Bad HTTP response: ") + std::to_string(response.result_int()) +
-                                ", API Code: " +
-                                std::to_string(errorResponse.code) + ", message: " + errorResponse.msg;
-        throw std::runtime_error(msg.c_str());
+        try {
+            ErrorResponse errorResponse;
+            errorResponse.fromJson(nlohmann::json::parse(response.body()));
+            msg += ", API Code: " + std::to_string(errorResponse.code) + ", message: " + errorResponse.msg;
+        } catch (const std::exception &) {
+            /// Not every error comes from the API itself - gateways and proxies answer with plain text or HTML
+            static constexpr std::size_t MAX_BODY_EXCERPT = 256;
+            auto body = response.body();
+
+            if (body.size() > MAX_BODY_EXCERPT) {
+                body.resize(MAX_BODY_EXCERPT);
+            }
+
+            msg += ", body: " + body;
+        }
+
+        throw std::runtime_error(msg);
     }
     return response;
 }
@@ -151,6 +183,11 @@ FundingRate RESTClient::getLastFundingRate(const std::string &symbol) const {
     const auto response = checkResponse(m_p->httpSession->get("fundingRate?symbol=" + symbol, true));
     FundingRates fundingRates;
     fundingRates.fromJson(nlohmann::json::parse(response.body()));
+
+    if (fundingRates.fundingRates.empty()) {
+        /// A freshly listed symbol has no funding history yet
+        throw std::runtime_error("No funding rate available for symbol: " + symbol);
+    }
 
     std::ranges::sort(fundingRates.fundingRates,
                       [](const FundingRate &a, const FundingRate &b) -> bool {
@@ -393,8 +430,8 @@ RESTClient::getHistoricalPrices(const std::string &symbol, const CandleInterval 
         }
     }
 
-    /// Remove last candle as it is invalid (not complete yet)
-    if (!retVal.empty()) {
+    /// Remove the last candle only when it is still open, a candle that closed in the past is complete and valid
+    if (!retVal.empty() && retVal.back().closeTime >= getMsTimestamp(currentTime()).count()) {
         retVal.pop_back();
     }
 
@@ -481,13 +518,18 @@ Exchange RESTClient::getExchangeInfo(const bool force) const {
     return m_p->getExchange();
 }
 
-void RESTClient::updateExchangeInfo(bool force) const {
+std::optional<Symbol> RESTClient::getSymbolInfo(const std::string &symbol) const {
+    updateExchangeInfo();
+    return m_p->findSymbol(symbol);
+}
 
-    if (m_p->getExchange().lastUpdateTime < 0 || std::time(nullptr) - m_p->getExchange().lastUpdateTime > EXCHANGE_DATA_MAX_AGE_S) {
+void RESTClient::updateExchangeInfo(bool force) const {
+    if (const auto lastUpdateTime = m_p->getExchangeLastUpdateTime();
+        lastUpdateTime < 0 || std::time(nullptr) - lastUpdateTime > EXCHANGE_DATA_MAX_AGE_S) {
         force = true;
     }
 
-    if (m_p->getExchange().symbols.empty() || force) {
+    if (force || m_p->isExchangeEmpty()) {
         const auto response = checkResponse(m_p->httpSession->get("exchangeInfo?", true));
 
         Exchange exchange;
@@ -658,7 +700,8 @@ std::vector<PositionRisk> RESTClient::getPositionRisk(const std::string &symbol)
     std::string path = "positionRisk?symbol=";
     path.append(symbol);
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    /// positionRisk only exists as a V2 endpoint, the V1 path answers with 404
+    const auto response = checkResponse(m_p->httpSession->getV2(path, false));
     std::vector<PositionRisk> retVal;
 
     for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {

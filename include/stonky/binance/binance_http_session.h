@@ -11,12 +11,24 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <stdexcept>
 #include <string>
 
 namespace stonky::binance {
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
+
+/**
+ * Thrown when a request fails on the transport level - name resolution, TCP, TLS or a timeout. In contrast to an API
+ * error this means the outcome is UNKNOWN: an order may or may not have reached the exchange, so the caller must not
+ * treat it as a rejection.
+ */
+class TransportError final : public std::runtime_error {
+public:
+    explicit TransportError(const std::string &message) : std::runtime_error(message) {
+    }
+};
 
 class HTTPSession {
     struct P;

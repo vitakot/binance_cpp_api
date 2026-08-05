@@ -8,6 +8,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 
 #include "stonky/binance/binance_http_session.h"
 #include "stonky/utils/utils.h"
+#include "stonky/utils/json_utils.h"
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/version.hpp>
 #include <spdlog/spdlog.h>
@@ -29,6 +30,9 @@ auto PUBLIC_API_FUTURES = "/fapi/v1/";
 auto PRIVATE_API_FUTURES_V2 = "/fapi/v2/";
 auto PUBLIC_API_FUTURES_V2 = "/fapi/v2/";
 
+/// How often the local clock is re-synchronized against the exchange clock
+static constexpr std::int64_t TIME_SYNC_INTERVAL_MS = 30 * 60 * 1000;
+
 struct HTTPSession::P {
     net::io_context ioc;
     std::string apiKey;
@@ -43,16 +47,26 @@ struct HTTPSession::P {
     std::int32_t weightLimit{};
     const EVP_MD *evpMd;
 
+    /// Difference between the exchange clock and the local clock. Signed requests are rejected with -1021 once the
+    /// local clock drifts more than recvWindow away from the server, so the timestamps are corrected by this offset.
+    mutable std::atomic<std::int64_t> timeOffsetMs{0};
+    mutable std::atomic<std::int64_t> lastTimeSyncMs{0};
+    const HTTPSession *parent{nullptr};
+
     P() : evpMd(EVP_sha256()) {
     }
 
     http::response<http::string_body> request(http::request<http::string_body> req);
 
     void addTimestampToTargetPath(std::string &target) const;
+
+    void ensureTimeSync() const;
 };
 
 HTTPSession::HTTPSession(const std::string &apiKey, const std::string &apiSecret, const bool futures) : m_p(
     std::make_unique<P>()) {
+    m_p->parent = this;
+
     if (futures) {
         m_p->uri = API_FUTURES_URI;
         m_p->publicApi = PUBLIC_API_FUTURES;
@@ -203,21 +217,27 @@ http::response<http::string_body> HTTPSession::P::request(
         throw boost::system::system_error{ec};
     }
 
-    auto const results = resolver.resolve(uri, "443");
-    net::connect(stream.next_layer(), results.begin(), results.end());
-    stream.handshake(ssl::stream_base::client);
-
     req.set("X-MBX-APIKEY", apiKey);
 
     if (req.method() == http::verb::post) {
         req.set(http::field::content_type, "application/json");
     }
 
-    http::write(stream, req);
     beast::flat_buffer buffer;
     http::response_parser<http::string_body> parser;
     parser.body_limit((std::numeric_limits<std::uint64_t>::max)());
-    http::read(stream, buffer, parser);
+
+    /// Everything below can fail without the exchange ever seeing the request - or after it has seen it. The caller
+    /// must be able to tell that apart from a rejection, hence the dedicated exception type.
+    try {
+        auto const results = resolver.resolve(uri, "443");
+        net::connect(stream.next_layer(), results.begin(), results.end());
+        stream.handshake(ssl::stream_base::client);
+        http::write(stream, req);
+        http::read(stream, buffer, parser);
+    } catch (const boost::system::system_error &e) {
+        throw TransportError(fmt::format("Transport failure for {}: {}", std::string(req.target()), e.what()));
+    }
 
     std::string limiterName("X-MBX-USED-WEIGHT-1M");
 
@@ -252,7 +272,46 @@ http::response<http::string_body> HTTPSession::P::request(
     return parser.get();
 }
 
+void HTTPSession::P::ensureTimeSync() const {
+    const auto now = getMsTimestamp(currentTime()).count();
+
+    if (lastTimeSyncMs != 0 && now - lastTimeSyncMs < TIME_SYNC_INTERVAL_MS) {
+        return;
+    }
+
+    /// Set upfront so that a failing endpoint is not hammered on every single signed request
+    lastTimeSyncMs = now;
+
+    try {
+        /// Public endpoint - does not go through addTimestampToTargetPath, so this cannot recurse
+        const auto response = parent->get("time?", true);
+
+        if (response.result() != http::status::ok) {
+            spdlog::warn(fmt::format("Time synchronization failed, HTTP {}", response.result_int()));
+            return;
+        }
+
+        std::int64_t serverTime = 0;
+        readValue<std::int64_t>(nlohmann::json::parse(response.body()), "serverTime", serverTime);
+
+        if (serverTime <= 0) {
+            return;
+        }
+
+        const auto offset = serverTime - getMsTimestamp(currentTime()).count();
+        timeOffsetMs = offset;
+
+        if (std::abs(offset) > 1000) {
+            spdlog::warn(fmt::format("Local clock differs from the exchange clock by {} ms, compensating", offset));
+        }
+    } catch (const std::exception &e) {
+        spdlog::warn(fmt::format("Time synchronization failed: {}", e.what()));
+    }
+}
+
 void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
+    ensureTimeSync();
+
     std::string parameters = target.substr(target.find('?') + 1);
     const std::string path = target.substr(0, target.find('?') + 1);
 
@@ -260,7 +319,7 @@ void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
     parameters.append(std::to_string(60000));
 
     parameters.append("&timestamp=");
-    parameters.append(std::to_string(getMsTimestamp(currentTime()).count()));
+    parameters.append(std::to_string(getMsTimestamp(currentTime()).count() + timeOffsetMs.load()));
 
     unsigned char digest[SHA256_DIGEST_LENGTH];
     unsigned int digestLength = SHA256_DIGEST_LENGTH;
