@@ -177,8 +177,11 @@ RESTClient::getHistoricalPrices(const std::string &symbol, const CandleInterval 
         }
     }
 
-    /// Remove last candle as it is invalid (not complete yet)
-    if (!retVal.empty()) {
+    /// Remove the last candle only when it is still open, a candle that closed in the past is complete and valid.
+    /// Dropping it unconditionally cost every DELISTED symbol its final bar permanently: the resume point moves to
+    /// the bar before it, and no later run can reach past a symbol that stopped trading. Live symbols merely lagged
+    /// by one bar. Matches the condition in the futures client.
+    if (!retVal.empty() && retVal.back().closeTime >= getMsTimestamp(currentTime()).count()) {
         retVal.pop_back();
     }
 
