@@ -7,6 +7,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
 #include "stonky/binance/binance_http_session.h"
+#include "stonky/binance/tls_verify.h"
 #include "stonky/utils/utils.h"
 #include "stonky/utils/json_utils.h"
 #include <boost/asio/ssl.hpp>
@@ -203,10 +204,11 @@ http::response<http::string_body> HTTPSession::P::request(
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     ssl::context ctx{ssl::context::sslv23_client};
-    ctx.set_default_verify_paths();
+    enableTlsPeerVerification(ctx);
 
     tcp::resolver resolver{ioc};
     ssl::stream<tcp::socket> stream{ioc, ctx};
+    stream.set_verify_callback(ssl::host_name_verification(uri));
 
     // Set SNI Hostname (many hosts need this to handshake successfully)
     if (!SSL_set_tlsext_host_name(stream.native_handle(), uri.c_str())) {
