@@ -90,6 +90,9 @@ bool Binance::isValidCandleResolution(const std::int32_t resolution, CandleInter
         case 10080:
             candleInterval = CandleInterval::_1w;
             return true;
+        case 43200:
+            candleInterval = CandleInterval::_1M;
+            return true;
         default:
             return false;
     }

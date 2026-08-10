@@ -7,6 +7,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 */
 
 #include "stonky/binance/binance_futures_ws_client.h"
+#include "stonky/binance/tls_verify.h"
 #include "stonky/utils/json_utils.h"
 #include <boost/beast/core.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -45,6 +46,7 @@ struct WebSocketClient::P {
     }
 
     P() : ctx(boost::asio::ssl::context::sslv23_client) {
+        enableTlsPeerVerification(ctx);
     }
 };
 

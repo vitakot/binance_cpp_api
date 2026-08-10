@@ -11,6 +11,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include "stonky/utils/json_utils.h"
 #include <nlohmann/json.hpp>
 #include <boost/asio/buffers_iterator.hpp>
+#include <boost/asio/ssl/host_name_verification.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
@@ -194,6 +195,9 @@ void WebSocketSession::run(const std::string &host, const std::string &port, con
     m_p->host = host;
     m_p->target = target;
     m_p->onJsonMsg = onJsonMsg;
+    // SNI selects the certificate, but does not authenticate it. Bind the
+    // verified peer certificate to the DNS name before starting the handshake.
+    m_p->ws.next_layer().set_verify_callback(boost::asio::ssl::host_name_verification(host));
 
     auto self = shared_from_this();
     m_p->resolver.async_resolve(
