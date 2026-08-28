@@ -34,6 +34,41 @@ auto PUBLIC_API_FUTURES_V2 = "/fapi/v2/";
 /// How often the local clock is re-synchronized against the exchange clock
 static constexpr std::int64_t TIME_SYNC_INTERVAL_MS = 30 * 60 * 1000;
 
+/// How long a delayed request may still be executed by the exchange. Binance defaults to 5000 ms and allows at most
+/// 60000; the maximum would let a badly delayed order still be executed, which the time synchronization makes
+/// unnecessary.
+static constexpr int RECV_WINDOW_MS = 5000;
+
+/**
+ * Bound the blocking socket operations. Beast's synchronous calls carry no timeout of their own, so a black holed
+ * connection blocks the calling thread - in the Zorro plugin that is the thread driving the whole strategy.
+ *
+ * NOTE: this is effective on Windows, where a timed out recv/send reports WSAETIMEDOUT and Asio surfaces it as an
+ * error. On POSIX the same condition arrives as EAGAIN, which Asio cannot tell from a non-blocking would-block and
+ * therefore polls and retries - there the call still blocks. Bounding POSIX as well needs the synchronous request
+ * path rewritten to async operations driven by io_context::run_for.
+ */
+void applySocketTimeout(net::ip::tcp::socket &socket, const int timeoutMs) {
+    if (timeoutMs <= 0) {
+        return;
+    }
+
+#ifdef _WIN32
+    const DWORD value = static_cast<DWORD>(timeoutMs);
+    const auto data = reinterpret_cast<const char *>(&value);
+    const int size = sizeof(value);
+#else
+    timeval value{};
+    value.tv_sec = timeoutMs / 1000;
+    value.tv_usec = timeoutMs % 1000 * 1000;
+    const auto data = reinterpret_cast<const void *>(&value);
+    const socklen_t size = sizeof(value);
+#endif
+
+    ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, data, size);
+    ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, data, size);
+}
+
 struct HTTPSession::P {
     net::io_context ioc;
     std::string apiKey;
@@ -52,6 +87,8 @@ struct HTTPSession::P {
     /// local clock drifts more than recvWindow away from the server, so the timestamps are corrected by this offset.
     mutable std::atomic<std::int64_t> timeOffsetMs{0};
     mutable std::atomic<std::int64_t> lastTimeSyncMs{0};
+    std::atomic<std::int64_t> lastSuccessMs{0};
+    std::atomic<int> requestTimeoutMs{DEFAULT_REQUEST_TIMEOUT_MS};
     const HTTPSession *parent{nullptr};
 
     P() : evpMd(EVP_sha256()) {
@@ -234,12 +271,15 @@ http::response<http::string_body> HTTPSession::P::request(
     try {
         auto const results = resolver.resolve(uri, "443");
         net::connect(stream.next_layer(), results.begin(), results.end());
+        applySocketTimeout(stream.next_layer(), requestTimeoutMs);
         stream.handshake(ssl::stream_base::client);
         http::write(stream, req);
         http::read(stream, buffer, parser);
     } catch (const boost::system::system_error &e) {
         throw TransportError(fmt::format("Transport failure for {}: {}", std::string(req.target()), e.what()));
     }
+
+    lastSuccessMs = getMsTimestamp(currentTime()).count();
 
     std::string limiterName("X-MBX-USED-WEIGHT-1M");
 
@@ -318,7 +358,7 @@ void HTTPSession::P::addTimestampToTargetPath(std::string &target) const {
     const std::string path = target.substr(0, target.find('?') + 1);
 
     parameters.append("&recvWindow=");
-    parameters.append(std::to_string(60000));
+    parameters.append(std::to_string(RECV_WINDOW_MS));
 
     parameters.append("&timestamp=");
     parameters.append(std::to_string(getMsTimestamp(currentTime()).count() + timeOffsetMs.load()));
@@ -344,5 +384,13 @@ void HTTPSession::setWeightLimit(const std::int32_t weightLimit) const {
 
 std::int32_t HTTPSession::getUsedWeight() const {
     return m_p->usedWeight;
+}
+
+std::int64_t HTTPSession::lastSuccessfulResponseMs() const {
+    return m_p->lastSuccessMs;
+}
+
+void HTTPSession::setRequestTimeout(const int timeoutMs) const {
+    m_p->requestTimeoutMs = timeoutMs;
 }
 }

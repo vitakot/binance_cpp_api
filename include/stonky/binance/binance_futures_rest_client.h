@@ -303,6 +303,18 @@ public:
     [[nodiscard]] std::int32_t getUsedAPIWeight() const;
 
     /**
+     * Wall clock time in ms of the last response received in full from the exchange, 0 when there was none yet. Use
+     * it to judge whether the connection is still alive without issuing a probe request.
+     */
+    [[nodiscard]] std::int64_t lastSuccessfulResponseMs() const;
+
+    /**
+     * Bound for the blocking socket operations of a single request
+     * @param timeoutMs 0 or less leaves the operating system defaults in place
+     */
+    void setRequestTimeout(int timeoutMs) const;
+
+    /**
      * Set maximal requests weight
      * @param weightLimit
      * @see https://binance-docs.github.io/apidocs/futures/en/#limits

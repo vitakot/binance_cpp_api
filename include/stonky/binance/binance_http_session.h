@@ -15,18 +15,38 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include <string>
 
 namespace stonky::binance {
+/// Default bound for the blocking socket operations of a single request
+static constexpr int DEFAULT_REQUEST_TIMEOUT_MS = 10000;
+
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace net = boost::asio;
 
 /**
- * Thrown when a request fails on the transport level - name resolution, TCP, TLS or a timeout. In contrast to an API
- * error this means the outcome is UNKNOWN: an order may or may not have reached the exchange, so the caller must not
- * treat it as a rejection.
+ * Base of every failure that leaves the outcome of the request UNKNOWN: it may or may not have been executed by the
+ * exchange. An order that fails this way must never be treated as rejected - it has to be reconciled by querying it
+ * back, otherwise a retry silently doubles the position.
  */
-class TransportError final : public std::runtime_error {
+class UnknownOutcomeError : public std::runtime_error {
 public:
-    explicit TransportError(const std::string &message) : std::runtime_error(message) {
+    explicit UnknownOutcomeError(const std::string &message) : std::runtime_error(message) {
+    }
+};
+
+/// The request failed on the transport level - name resolution, TCP, TLS or a timeout
+class TransportError final : public UnknownOutcomeError {
+public:
+    explicit TransportError(const std::string &message) : UnknownOutcomeError(message) {
+    }
+};
+
+/**
+ * The exchange answered, but with a status that Binance itself documents as "execution status unknown" - the HTTP
+ * 5xx family and the API codes -1006 (unexpected response) and -1007 (timeout waiting for the backend).
+ */
+class ExecutionUnknown final : public UnknownOutcomeError {
+public:
+    explicit ExecutionUnknown(const std::string &message) : UnknownOutcomeError(message) {
     }
 };
 
@@ -56,6 +76,18 @@ public:
     void setWeightLimit(std::int32_t weightLimit) const;
 
     [[nodiscard]] std::int32_t getUsedWeight() const;
+
+    /**
+     * Wall clock time in ms of the last response that was received in full. Zero when nothing has been received yet.
+     * Lets callers judge whether the connection is alive without issuing a probe request of their own.
+     */
+    [[nodiscard]] std::int64_t lastSuccessfulResponseMs() const;
+
+    /**
+     * Bound for the blocking socket operations of a single request, see applySocketTimeout for the platform caveat.
+     * @param timeoutMs 0 or less leaves the operating system defaults in place
+     */
+    void setRequestTimeout(int timeoutMs) const;
 };
 }
 #endif //INCLUDE_STONKY_BINANCE_HTTP_SESSION_H

@@ -30,7 +30,21 @@ private:
 
 public:
     RESTClient *parent = nullptr;
-    std::shared_ptr<HTTPSession> httpSession;
+
+    /// Replaced by setCredentials while other threads may be issuing requests (the plugin refreshes exchange info
+    /// from a background thread). A plain shared_ptr would be read and reassigned concurrently - a data race, and
+    /// with the reset() that preceded the assignment even a window with a null pointer.
+    std::atomic<std::shared_ptr<HTTPSession> > httpSession;
+
+    [[nodiscard]] std::shared_ptr<HTTPSession> session() const {
+        auto current = httpSession.load();
+
+        if (!current) {
+            throw std::runtime_error("Binance REST session is not initialized");
+        }
+
+        return current;
+    }
 
     [[nodiscard]] Exchange getExchange() const {
         std::lock_guard lk(m_locker);
@@ -111,13 +125,21 @@ public:
                      std::int32_t limit) const;
 };
 
+/// Binance documents these as "execution status unknown": the request may still have been executed
+static bool isExecutionUnknown(const unsigned httpStatus, const int apiCode) {
+    /// -1006 UNEXPECTED_RESP, -1007 TIMEOUT
+    return httpStatus >= 500 || apiCode == -1006 || apiCode == -1007;
+}
+
 http::response<http::string_body> checkResponse(const http::response<http::string_body> &response) {
     if (response.result() != http::status::ok) {
         std::string msg = std::string("Bad HTTP response: ") + std::to_string(response.result_int());
+        int apiCode = 0;
 
         try {
             ErrorResponse errorResponse;
             errorResponse.fromJson(nlohmann::json::parse(response.body()));
+            apiCode = errorResponse.code;
             msg += ", API Code: " + std::to_string(errorResponse.code) + ", message: " + errorResponse.msg;
         } catch (const std::exception &) {
             /// Not every error comes from the API itself - gateways and proxies answer with plain text or HTML
@@ -129,6 +151,10 @@ http::response<http::string_body> checkResponse(const http::response<http::strin
             }
 
             msg += ", body: " + body;
+        }
+
+        if (isExecutionUnknown(response.result_int(), apiCode)) {
+            throw ExecutionUnknown(msg);
         }
 
         throw std::runtime_error(msg);
@@ -144,7 +170,7 @@ RESTClient::RESTClient(const std::string &apiKey, const std::string &apiSecret) 
 RESTClient::~RESTClient() = default;
 
 void RESTClient::setCredentials(const std::string &apiKey, const std::string &apiSecret) const {
-    m_p->httpSession.reset();
+    /// Single atomic swap - a request already in flight keeps the old session alive through its own shared_ptr copy
     m_p->httpSession = std::make_shared<HTTPSession>(apiKey, apiSecret, true);
 }
 
@@ -169,7 +195,7 @@ RESTClient::P::getFundingRates(const std::string &symbol, const int64_t startTim
         path.append(std::to_string(limit));
     }
 
-    const auto response = checkResponse(httpSession->get(path, true));
+    const auto response = checkResponse(session()->get(path, true));
     FundingRates fundingRates;
     fundingRates.fromJson(nlohmann::json::parse(response.body()));
     return fundingRates.fundingRates;
@@ -180,7 +206,7 @@ FundingRate RESTClient::getLastFundingRate(const std::string &symbol) const {
        throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
     }
 
-    const auto response = checkResponse(m_p->httpSession->get("fundingRate?symbol=" + symbol, true));
+    const auto response = checkResponse(m_p->session()->get("fundingRate?symbol=" + symbol, true));
     FundingRates fundingRates;
     fundingRates.fromJson(nlohmann::json::parse(response.body()));
 
@@ -202,7 +228,7 @@ MarkPrice RESTClient::getMarkPrice(const std::string &symbol) const {
         throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
     }
 
-    const auto response = checkResponse(m_p->httpSession->get("premiumIndex?symbol=" + symbol, true));
+    const auto response = checkResponse(m_p->session()->get("premiumIndex?symbol=" + symbol, true));
     MarkPrice markPrice;
     markPrice.fromJson(nlohmann::json::parse(response.body()));
     return markPrice;
@@ -213,7 +239,7 @@ TickerPrice RESTClient::getTickerPrice(const std::string &symbol) const {
         throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
     }
 
-    const auto response = checkResponse(m_p->httpSession->get("ticker/price?symbol=" + symbol, true));
+    const auto response = checkResponse(m_p->session()->get("ticker/price?symbol=" + symbol, true));
     TickerPrice tickerPrice;
     tickerPrice.fromJson(nlohmann::json::parse(response.body()));
     return tickerPrice;
@@ -224,14 +250,14 @@ BookTickerPrice RESTClient::getBookTickerPrice(const std::string &symbol) const 
         throw std::runtime_error(std::string("Invalid parameter, symbol must be specified").c_str());
     }
 
-    const auto response = checkResponse(m_p->httpSession->get("ticker/bookTicker?symbol=" + symbol, true));
+    const auto response = checkResponse(m_p->session()->get("ticker/bookTicker?symbol=" + symbol, true));
     BookTickerPrice bookTickerPrice;
     bookTickerPrice.fromJson(nlohmann::json::parse(response.body()));
     return bookTickerPrice;
 }
 
 std::vector<MarkPrice> RESTClient::getMarkPrices() const {
-    const auto response = checkResponse(m_p->httpSession->get("premiumIndex", true));
+    const auto response = checkResponse(m_p->session()->get("premiumIndex", true));
     MarkPrices markPrices;
     markPrices.fromJson(nlohmann::json::parse(response.body()));
     return markPrices.markPrices;
@@ -306,39 +332,39 @@ OrderResponse RESTClient::sendOrder(const Order &order) const {
     path.append("&newOrderRespType=");
     path.append(magic_enum::enum_name(order.newOrderRespType));
 
-    const auto response = checkResponse(m_p->httpSession->post(path, "", false));
+    const auto response = checkResponse(m_p->session()->post(path, "", false));
     OrderResponse retVal;
     retVal.fromJson(nlohmann::json::parse(response.body()));
     return retVal;
 }
 
 Account RESTClient::getAccountInfo() const {
-    const auto response = checkResponse(m_p->httpSession->getV2("account?", false));
+    const auto response = checkResponse(m_p->session()->getV2("account?", false));
     Account account;
     account.fromJson(nlohmann::json::parse(response.body()));
     return account;
 }
 
 std::int64_t RESTClient::getServerTime() const {
-    const auto response = checkResponse(m_p->httpSession->get("time?", true));
+    const auto response = checkResponse(m_p->session()->get("time?", true));
     std::int64_t time;
     readValue<std::int64_t>(nlohmann::json::parse(response.body()), "serverTime", time);
     return time;
 }
 
 std::string RESTClient::startUserDataStream() const {
-    const auto response = checkResponse(m_p->httpSession->post("listenKey?", "", false));
+    const auto response = checkResponse(m_p->session()->post("listenKey?", "", false));
     std::string listenKey;
     readValue<std::string>(nlohmann::json::parse(response.body()), "listenKey", listenKey);
     return listenKey;
 }
 
 void RESTClient::keepAliveUserDataStream() const {
-    const auto response = checkResponse(m_p->httpSession->put("listenKey?", "", false));
+    const auto response = checkResponse(m_p->session()->put("listenKey?", "", false));
 }
 
 void RESTClient::closeUserDataStream() const {
-    const auto response = checkResponse(m_p->httpSession->del("listenKey?", false));
+    const auto response = checkResponse(m_p->session()->del("listenKey?", false));
 }
 
 std::vector<Candle>
@@ -368,7 +394,7 @@ RESTClient::P::getHistoricalPrices(const std::string &symbol, const CandleInterv
         path.append(std::to_string(limit));
     }
 
-    auto response = checkResponse(httpSession->get(path, true));
+    auto response = checkResponse(session()->get(path, true));
     CandlesResponse candlesResponse;
     candlesResponse.fromJson(nlohmann::json::parse(response.body()));
 
@@ -402,7 +428,7 @@ RESTClient::getHistoricalPricesSingle(const std::string &symbol, const CandleInt
         path.append(std::to_string(limit));
     }
 
-    auto response = checkResponse(m_p->httpSession->get(path, true));
+    auto response = checkResponse(m_p->session()->get(path, true));
     CandlesResponse candlesResponse;
     candlesResponse.fromJson(nlohmann::json::parse(response.body()));
 
@@ -439,7 +465,7 @@ RESTClient::getHistoricalPrices(const std::string &symbol, const CandleInterval 
 }
 
 PositionMode RESTClient::getPositionMode() const {
-    const auto response = checkResponse(m_p->httpSession->get("positionSide/dual?", false));
+    const auto response = checkResponse(m_p->session()->get("positionSide/dual?", false));
 
     bool isDualMode;
     readValue<bool>(nlohmann::json::parse(response.body()), "dualSidePosition", isDualMode);
@@ -466,7 +492,7 @@ RESTClient::cancelOrder(const std::string &symbol, const std::string &clientId, 
         path.append(std::to_string(orderId));
     }
 
-    const auto response = checkResponse(m_p->httpSession->del(path, false));
+    const auto response = checkResponse(m_p->session()->del(path, false));
     OrderResponse retVal;
     retVal.fromJson(nlohmann::json::parse(response.body()));
     return retVal;
@@ -487,7 +513,7 @@ RESTClient::queryOrder(const std::string &symbol, const std::string &clientId, s
         path.append(std::to_string(orderId));
     }
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    const auto response = checkResponse(m_p->session()->get(path, false));
     OrderResponse retVal;
     retVal.fromJson(nlohmann::json::parse(response.body()));
     return retVal;
@@ -501,7 +527,7 @@ std::vector<Position> RESTClient::getPosition(const std::string &symbol) const {
         path.append(symbol);
     }
 
-    const auto response = checkResponse(m_p->httpSession->getV2(path, false));
+    const auto response = checkResponse(m_p->session()->getV2(path, false));
     std::vector<Position> retVal;
 
     for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
@@ -530,7 +556,7 @@ void RESTClient::updateExchangeInfo(bool force) const {
     }
 
     if (force || m_p->isExchangeEmpty()) {
-        const auto response = checkResponse(m_p->httpSession->get("exchangeInfo?", true));
+        const auto response = checkResponse(m_p->session()->get("exchangeInfo?", true));
 
         Exchange exchange;
         exchange.fromJson(nlohmann::json::parse(response.body()));
@@ -541,7 +567,7 @@ void RESTClient::updateExchangeInfo(bool force) const {
 
 std::vector<AccountBalance> RESTClient::getAccountBalances() const {
     std::vector<AccountBalance> retVal;
-    const auto response = checkResponse(m_p->httpSession->getV2("balance?", false));
+    const auto response = checkResponse(m_p->session()->getV2("balance?", false));
 
     for (nlohmann::json balancesObj = nlohmann::json::parse(response.body()); const auto &el: balancesObj) {
         AccountBalance accountBalance;
@@ -555,7 +581,7 @@ std::vector<Order> RESTClient::getAllOpenOrders(const std::string &symbol) const
     std::string path = "openOrders?symbol=";
     path.append(symbol);
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    const auto response = checkResponse(m_p->session()->get(path, false));
     std::vector<Order> retVal;
 
     for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
@@ -571,7 +597,7 @@ bool RESTClient::cancelAllOpenOrders(const std::string &symbol, std::string &err
     std::string path = "allOpenOrders?symbol=";
     path.append(symbol);
 
-    const auto response = checkResponse(m_p->httpSession->del(path, false));
+    const auto response = checkResponse(m_p->session()->del(path, false));
 
     nlohmann::json jsonObject = nlohmann::json::parse(response.body());
 
@@ -598,7 +624,7 @@ std::vector<OrderResponse> RESTClient::sendOrders(std::vector<Order> &orders) co
     const std::string ordersStr = ordersJson.dump();
     path.append(ordersStr);
 
-    const auto response = checkResponse(m_p->httpSession->post(path, "", false));
+    const auto response = checkResponse(m_p->session()->post(path, "", false));
     OrdersResponse ordersResponse;
     ordersResponse.fromJson(nlohmann::json::parse(response.body()));
     return ordersResponse.responses;
@@ -613,7 +639,7 @@ DownloadId RESTClient::getDownloadId(const std::int64_t startTime, const std::in
     path.append("&endTime=");
     path.append(std::to_string(endTime));
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    const auto response = checkResponse(m_p->session()->get(path, false));
     DownloadId downloadId;
     downloadId.fromJson(nlohmann::json::parse(response.body()));
     return downloadId;
@@ -625,7 +651,7 @@ std::string RESTClient::getDownloadUrl(const DownloadId &downloadId) const {
     path.append("&downloadId=");
     path.append(downloadId.downloadId);
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    const auto response = checkResponse(m_p->session()->get(path, false));
 
     nlohmann::json jsonObject = nlohmann::json::parse(response.body());
     return jsonObject["url"];
@@ -656,7 +682,7 @@ std::vector<Income> RESTClient::getIncome(const std::string &symbol, const std::
         path.append(std::to_string(endTime));
     }
 
-    const auto response = checkResponse(m_p->httpSession->get(path, false));
+    const auto response = checkResponse(m_p->session()->get(path, false));
     Incomes incomes;
     incomes.fromJson(nlohmann::json::parse(response.body()));
     return incomes.incomes;
@@ -701,7 +727,7 @@ std::vector<PositionRisk> RESTClient::getPositionRisk(const std::string &symbol)
     path.append(symbol);
 
     /// positionRisk only exists as a V2 endpoint, the V1 path answers with 404
-    const auto response = checkResponse(m_p->httpSession->getV2(path, false));
+    const auto response = checkResponse(m_p->session()->getV2(path, false));
     std::vector<PositionRisk> retVal;
 
     for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
@@ -714,11 +740,19 @@ std::vector<PositionRisk> RESTClient::getPositionRisk(const std::string &symbol)
 }
 
 std::int32_t RESTClient::getUsedAPIWeight() const {
-    return m_p->httpSession->getUsedWeight();
+    return m_p->session()->getUsedWeight();
+}
+
+std::int64_t RESTClient::lastSuccessfulResponseMs() const {
+    return m_p->session()->lastSuccessfulResponseMs();
+}
+
+void RESTClient::setRequestTimeout(const int timeoutMs) const {
+    m_p->session()->setRequestTimeout(timeoutMs);
 }
 
 void RESTClient::setAPIWeightLimit(const std::int32_t weightLimit) const {
-    m_p->httpSession->setWeightLimit(weightLimit);
+    m_p->session()->setWeightLimit(weightLimit);
 }
 
 void RESTClient::setExchangeInfo(const Exchange &exchange) const {
@@ -731,7 +765,7 @@ std::pair<int, double> RESTClient::changeInitialLeverage(const std::string &symb
     path.append("&leverage=");
     path.append(std::to_string(leverage));
 
-    const auto response = checkResponse(m_p->httpSession->post(path, "", false));
+    const auto response = checkResponse(m_p->session()->post(path, "", false));
     const nlohmann::json responseJson = nlohmann::json::parse(response.body());
 
     int targetLeverage;
@@ -776,7 +810,7 @@ OpenInterest RESTClient::getOpenInterest(const std::string &symbol) const {
     std::string path = "openInterest?symbol=";
     path.append(symbol);
 
-    const auto response = checkResponse(m_p->httpSession->get(path, true));
+    const auto response = checkResponse(m_p->session()->get(path, true));
     OpenInterest retVal;
     retVal.fromJson(nlohmann::json::parse(response.body()));
     return retVal;
@@ -813,7 +847,7 @@ RESTClient::P::getOpenInterestStatistics(const std::string &symbol, const Statis
             path.append(std::to_string(limit));
         }
 
-        const auto response = checkResponse(httpSession->getFutures(path));
+        const auto response = checkResponse(session()->getFutures(path));
 
         for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
             OpenInterestStatistics openInterestStatistics;
@@ -872,7 +906,7 @@ RESTClient::P::getLongShortRatio(const std::string &symbol, const StatisticsPeri
             path.append(std::to_string(limit));
         }
 
-        const auto response = checkResponse(httpSession->getFutures(path));
+        const auto response = checkResponse(session()->getFutures(path));
 
         for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
             LongShortRatio longShortRatio;
@@ -931,7 +965,7 @@ RESTClient::P::getBuySellVolume(const std::string &symbol, const StatisticsPerio
             path.append(std::to_string(limit));
         }
 
-        const auto response = checkResponse(httpSession->getFutures(path));
+        const auto response = checkResponse(session()->getFutures(path));
 
         for (nlohmann::json jsonObject = nlohmann::json::parse(response.body()); const auto &el: jsonObject) {
             BuySellVolume buySellVolume;
