@@ -127,8 +127,14 @@ public:
 
 /// Binance documents these as "execution status unknown": the request may still have been executed
 static bool isExecutionUnknown(const unsigned httpStatus, const int apiCode) {
-    /// -1006 UNEXPECTED_RESP, -1007 TIMEOUT
-    return httpStatus >= 500 || apiCode == -1006 || apiCode == -1007;
+    /// -1006 UNEXPECTED_RESP, -1007 TIMEOUT; 408 is a timeout waiting for the backend, so the request may have
+    /// reached it, and 5xx is documented as unknown outright
+    return httpStatus >= 500 || httpStatus == 408 || apiCode == -1006 || apiCode == -1007;
+}
+
+/// The one answer that settles the question instead of leaving it open: -2013 ORDER_NOT_EXIST
+static bool isOrderNotFound(const int apiCode) {
+    return apiCode == -2013;
 }
 
 http::response<http::string_body> checkResponse(const http::response<http::string_body> &response) {
@@ -155,6 +161,10 @@ http::response<http::string_body> checkResponse(const http::response<http::strin
 
         if (isExecutionUnknown(response.result_int(), apiCode)) {
             throw ExecutionUnknown(msg);
+        }
+
+        if (isOrderNotFound(apiCode)) {
+            throw OrderNotFound(msg);
         }
 
         throw std::runtime_error(msg);

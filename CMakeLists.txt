@@ -61,7 +61,10 @@ if (ENABLE_TESTS)
     target_link_libraries(binance_test PRIVATE spdlog::spdlog_header_only binance_api OpenSSL::Crypto)
 endif ()
 
-target_link_libraries(binance_api PRIVATE spdlog::spdlog_header_only OpenSSL::Crypto OpenSSL::SSL stonky_common nlohmann_json::nlohmann_json)
+# stonky_common is PUBLIC on purpose: the public headers of this library include stonky/interface and
+# stonky/utils headers, so every consumer needs its include directories, not just this target.
+target_link_libraries(binance_api PRIVATE spdlog::spdlog_header_only OpenSSL::Crypto OpenSSL::SSL nlohmann_json::nlohmann_json)
+target_link_libraries(binance_api PUBLIC stonky_common)
 
 if (NOT MSVC)
     target_link_libraries(binance_api PRIVATE atomic)
