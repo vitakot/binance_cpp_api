@@ -14,6 +14,11 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include <boost/beast/version.hpp>
 #include <spdlog/spdlog.h>
 #include <openssl/hmac.h>
+#ifndef _WIN32
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#endif
 
 namespace stonky::binance {
 namespace ssl = boost::asio::ssl;
@@ -43,10 +48,12 @@ static constexpr int RECV_WINDOW_MS = 5000;
  * Bound the blocking socket operations. Beast's synchronous calls carry no timeout of their own, so a black holed
  * connection blocks the calling thread - in the Zorro plugin that is the thread driving the whole strategy.
  *
- * NOTE: this is effective on Windows, where a timed out recv/send reports WSAETIMEDOUT and Asio surfaces it as an
- * error. On POSIX the same condition arrives as EAGAIN, which Asio cannot tell from a non-blocking would-block and
- * therefore polls and retries - there the call still blocks. Bounding POSIX as well needs the synchronous request
- * path rewritten to async operations driven by io_context::run_for.
+ * NOTE: the socket timeouts alone are effective on Windows, where a timed out recv/send reports WSAETIMEDOUT and
+ * Asio surfaces it as an error. On POSIX the same condition arrives as EAGAIN, which Asio cannot tell from a
+ * non-blocking would-block and therefore polls and retries - there they bound nothing, which is why the keepalive
+ * and TCP_USER_TIMEOUT settings below are applied as well: those end in ETIMEDOUT, a real error. The connect itself
+ * is bounded only by the kernel's SYN retries, since these are applied to an already connected socket; bounding it
+ * explicitly needs the synchronous request path rewritten to async operations driven by io_context::run_for.
  */
 void applySocketTimeout(net::ip::tcp::socket &socket, const int timeoutMs) {
     if (timeoutMs <= 0) {
@@ -67,6 +74,32 @@ void applySocketTimeout(net::ip::tcp::socket &socket, const int timeoutMs) {
 
     ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, data, size);
     ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, data, size);
+
+#ifndef _WIN32
+    // SO_RCVTIMEO/SO_SNDTIMEO do not bound a synchronous Boost.Asio operation on
+    // POSIX: a timed-out recv reports EAGAIN, which Asio cannot tell from a
+    // non-blocking would-block, so it polls with no deadline and waits anyway.
+    // What does bound a peer that has gone silent is the kernel giving up on the
+    // connection: keepalive probes on an idle socket and TCP_USER_TIMEOUT on
+    // unacknowledged data both end in ETIMEDOUT, a real error the synchronous
+    // call reports. Roughly a minute, per connection rather than per transfer,
+    // so a large transfer that keeps flowing is unaffected.
+    const int handle = socket.native_handle();
+    constexpr int enable = 1;
+    ::setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(enable));
+#ifdef TCP_KEEPIDLE
+    constexpr int idleSeconds = 30;
+    constexpr int probeIntervalSeconds = 10;
+    constexpr int probeCount = 3;
+    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPIDLE, &idleSeconds, sizeof(idleSeconds));
+    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPINTVL, &probeIntervalSeconds, sizeof(probeIntervalSeconds));
+    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPCNT, &probeCount, sizeof(probeCount));
+#endif
+#ifdef TCP_USER_TIMEOUT
+    constexpr unsigned int unackedMs = 60000;
+    ::setsockopt(handle, IPPROTO_TCP, TCP_USER_TIMEOUT, &unackedMs, sizeof(unackedMs));
+#endif
+#endif
 }
 
 struct HTTPSession::P {
