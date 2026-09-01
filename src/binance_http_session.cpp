@@ -11,14 +11,12 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include "stonky/utils/utils.h"
 #include "stonky/utils/json_utils.h"
 #include <boost/asio/ssl.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/beast/version.hpp>
 #include <spdlog/spdlog.h>
 #include <openssl/hmac.h>
-#ifndef _WIN32
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#endif
+#include <chrono>
+#include <utility>
 
 namespace stonky::binance {
 namespace ssl = boost::asio::ssl;
@@ -44,66 +42,46 @@ static constexpr std::int64_t TIME_SYNC_INTERVAL_MS = 30 * 60 * 1000;
 /// unnecessary.
 static constexpr int RECV_WINDOW_MS = 5000;
 
-/**
- * Bound the blocking socket operations. Beast's synchronous calls carry no timeout of their own, so a black holed
- * connection blocks the calling thread - in the Zorro plugin that is the thread driving the whole strategy.
- *
- * NOTE: the socket timeouts alone are effective on Windows, where a timed out recv/send reports WSAETIMEDOUT and
- * Asio surfaces it as an error. On POSIX the same condition arrives as EAGAIN, which Asio cannot tell from a
- * non-blocking would-block and therefore polls and retries - there they bound nothing, which is why the keepalive
- * and TCP_USER_TIMEOUT settings below are applied as well: those end in ETIMEDOUT, a real error. The connect itself
- * is bounded only by the kernel's SYN retries, since these are applied to an already connected socket; bounding it
- * explicitly needs the synchronous request path rewritten to async operations driven by io_context::run_for.
- */
-void applySocketTimeout(net::ip::tcp::socket &socket, const int timeoutMs) {
-    if (timeoutMs <= 0) {
-        return;
+namespace {
+/** Run one asynchronous operation synchronously, cancelling it when no
+ * progress completes before the configured deadline. A non-positive timeout
+ * deliberately leaves the operating-system defaults in place. */
+template<typename Start, typename Cancel>
+boost::system::error_code runTimedOperation(net::io_context &ioc, const int timeoutMs,
+                                            Start start, Cancel cancel) {
+    boost::system::error_code operationError = net::error::operation_aborted;
+    bool finished = false;
+    bool timedOut = false;
+    net::steady_timer timer{ioc};
+    if (timeoutMs > 0) {
+        timer.expires_after(std::chrono::milliseconds(timeoutMs));
+    } else {
+        timer.expires_at(net::steady_timer::clock_type::time_point::max());
     }
-
-#ifdef _WIN32
-    const DWORD value = static_cast<DWORD>(timeoutMs);
-    const auto data = reinterpret_cast<const char *>(&value);
-    const int size = sizeof(value);
-#else
-    timeval value{};
-    value.tv_sec = timeoutMs / 1000;
-    value.tv_usec = timeoutMs % 1000 * 1000;
-    const auto data = reinterpret_cast<const void *>(&value);
-    const socklen_t size = sizeof(value);
-#endif
-
-    ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, data, size);
-    ::setsockopt(socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, data, size);
-
-#ifndef _WIN32
-    // SO_RCVTIMEO/SO_SNDTIMEO do not bound a synchronous Boost.Asio operation on
-    // POSIX: a timed-out recv reports EAGAIN, which Asio cannot tell from a
-    // non-blocking would-block, so it polls with no deadline and waits anyway.
-    // What does bound a peer that has gone silent is the kernel giving up on the
-    // connection: keepalive probes on an idle socket and TCP_USER_TIMEOUT on
-    // unacknowledged data both end in ETIMEDOUT, a real error the synchronous
-    // call reports. Roughly a minute, per connection rather than per transfer,
-    // so a large transfer that keeps flowing is unaffected.
-    const int handle = socket.native_handle();
-    constexpr int enable = 1;
-    ::setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(enable));
-#ifdef TCP_KEEPIDLE
-    constexpr int idleSeconds = 30;
-    constexpr int probeIntervalSeconds = 10;
-    constexpr int probeCount = 3;
-    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPIDLE, &idleSeconds, sizeof(idleSeconds));
-    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPINTVL, &probeIntervalSeconds, sizeof(probeIntervalSeconds));
-    ::setsockopt(handle, IPPROTO_TCP, TCP_KEEPCNT, &probeCount, sizeof(probeCount));
-#endif
-#ifdef TCP_USER_TIMEOUT
-    constexpr unsigned int unackedMs = 60000;
-    ::setsockopt(handle, IPPROTO_TCP, TCP_USER_TIMEOUT, &unackedMs, sizeof(unackedMs));
-#endif
-#endif
+    timer.async_wait([&](const boost::system::error_code &ec) {
+        if (!ec && !finished) {
+            timedOut = true;
+            cancel();
+        }
+    });
+    start([&](const boost::system::error_code &ec) {
+        operationError = ec;
+        finished = true;
+        (void) timer.cancel();
+    });
+    ioc.restart();
+    ioc.run();
+    return timedOut ? make_error_code(net::error::timed_out) : operationError;
 }
 
+void throwIfError(const boost::system::error_code &ec) {
+    if (ec) {
+        throw boost::system::system_error{ec};
+    }
+}
+} // namespace
+
 struct HTTPSession::P {
-    net::io_context ioc;
     std::string apiKey;
     std::string apiSecret;
     std::string uri;
@@ -276,6 +254,7 @@ http::response<http::string_body> HTTPSession::P::request(
     ssl::context ctx{ssl::context::sslv23_client};
     enableTlsPeerVerification(ctx);
 
+    net::io_context ioc;
     tcp::resolver resolver{ioc};
     ssl::stream<tcp::socket> stream{ioc, ctx};
     stream.set_verify_callback(ssl::host_name_verification(uri));
@@ -302,12 +281,74 @@ http::response<http::string_body> HTTPSession::P::request(
     /// Everything below can fail without the exchange ever seeing the request - or after it has seen it. The caller
     /// must be able to tell that apart from a rejection, hence the dedicated exception type.
     try {
-        auto const results = resolver.resolve(uri, "443");
-        net::connect(stream.next_layer(), results.begin(), results.end());
-        applySocketTimeout(stream.next_layer(), requestTimeoutMs);
-        stream.handshake(ssl::stream_base::client);
-        http::write(stream, req);
-        http::read(stream, buffer, parser);
+        const auto timeoutMs = requestTimeoutMs.load();
+        tcp::resolver::results_type results;
+        throwIfError(runTimedOperation(
+            ioc, timeoutMs,
+            [&](auto complete) {
+                resolver.async_resolve(
+                    uri, "443",
+                    [&, complete](const boost::system::error_code &ec,
+                                  tcp::resolver::results_type resolved) {
+                        if (!ec) {
+                            results = std::move(resolved);
+                        }
+                        complete(ec);
+                    });
+            },
+            [&] { resolver.cancel(); }));
+        throwIfError(runTimedOperation(
+            ioc, timeoutMs,
+            [&](auto complete) {
+                net::async_connect(
+                    stream.next_layer(), results,
+                    [complete](const boost::system::error_code &ec, const tcp::endpoint &) {
+                        complete(ec);
+                    });
+            },
+            [&] {
+                boost::system::error_code ignored;
+                stream.next_layer().cancel(ignored);
+            }));
+        throwIfError(runTimedOperation(
+            ioc, timeoutMs,
+            [&](auto complete) {
+                stream.async_handshake(
+                    ssl::stream_base::client,
+                    [complete](const boost::system::error_code &ec) { complete(ec); });
+            },
+            [&] {
+                boost::system::error_code ignored;
+                stream.next_layer().cancel(ignored);
+            }));
+        throwIfError(runTimedOperation(
+            ioc, timeoutMs,
+            [&](auto complete) {
+                http::async_write(
+                    stream, req,
+                    [complete](const boost::system::error_code &ec, const std::size_t) {
+                        complete(ec);
+                    });
+            },
+            [&] {
+                boost::system::error_code ignored;
+                stream.next_layer().cancel(ignored);
+            }));
+        while (!parser.is_done()) {
+            throwIfError(runTimedOperation(
+                ioc, timeoutMs,
+                [&](auto complete) {
+                    http::async_read_some(
+                        stream, buffer, parser,
+                        [complete](const boost::system::error_code &ec, const std::size_t) {
+                            complete(ec);
+                        });
+                },
+                [&] {
+                    boost::system::error_code ignored;
+                    stream.next_layer().cancel(ignored);
+                }));
+        }
     } catch (const boost::system::system_error &e) {
         throw TransportError(fmt::format("Transport failure for {}: {}", std::string(req.target()), e.what()));
     }
@@ -335,13 +376,19 @@ http::response<http::string_body> HTTPSession::P::request(
         std::this_thread::sleep_for(std::chrono::seconds(secToWeighReset));
     }
 
-    boost::system::error_code ec;
-    stream.shutdown(ec);
-    
-    if (ec == boost::asio::error::eof) {
-        // Rationale:
-        // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-        ec.assign(0, ec.category());
+    try {
+        (void) runTimedOperation(
+            ioc, requestTimeoutMs.load(),
+            [&](auto complete) {
+                stream.async_shutdown(
+                    [complete](const boost::system::error_code &ec) { complete(ec); });
+            },
+            [&] {
+                boost::system::error_code ignored;
+                stream.next_layer().cancel(ignored);
+            });
+    } catch (...) {
+        // The complete HTTP response is authoritative; TLS close is best-effort.
     }
 
     return parser.get();

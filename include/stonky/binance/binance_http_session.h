@@ -15,7 +15,7 @@ Copyright (c) 2022 Vitezslav Kot <vitezslav.kot@stonky.cz>, Stonky s.r.o.
 #include <string>
 
 namespace stonky::binance {
-/// Default bound for the blocking socket operations of a single request
+/// Default inactivity bound for each network operation of a request
 static constexpr int DEFAULT_REQUEST_TIMEOUT_MS = 10000;
 
 namespace beast = boost::beast;
@@ -94,7 +94,7 @@ public:
     [[nodiscard]] std::int64_t lastSuccessfulResponseMs() const;
 
     /**
-     * Bound for the blocking socket operations of a single request, see applySocketTimeout for the platform caveat.
+     * Inactivity bound for DNS, connect, TLS, write and each response read.
      * @param timeoutMs 0 or less leaves the operating system defaults in place
      */
     void setRequestTimeout(int timeoutMs) const;
